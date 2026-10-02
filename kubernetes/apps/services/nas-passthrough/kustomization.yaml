@@ -1,0 +1,16 @@
+# Thin Traefik passthrough for public hostnames whose backend still lives
+# on the Unraid NAS and hasn't been migrated into the cluster. Traefik
+# terminates TLS (Let's Encrypt via DNS-01) and reverse-proxies to the NAS
+# over plain HTTP on the LAN, same as every in-cluster Ingress here.
+# Add a new pair here, then add the hostname to the DDNS updater's DOMAINS
+# (kubernetes/core/services/external-dns/ddns-deployment.yaml), whenever a
+# new NAS-hosted service should be reachable under *.nvlab.fr.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nas-passthrough
+
+resources:
+  - wiki.yaml
+  - jellyfin.yaml
+  - media.yaml

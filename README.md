@@ -23,7 +23,8 @@ Pure GitOps homelab running on 3 bare-metal nodes, provisioned with
 | Block storage | Longhorn (local NVMe, replicated across all 3 nodes) |
 | File storage | `nfs-subdir-external-provisioner` → Unraid NAS |
 | GPU passthrough | Intel Device Plugin (`gpu.intel.com/i915`), for Plex/Jellyfin Quick Sync transcoding |
-| DNS | Split-horizon: external-dns → Cloudflare (public, opt-in via `homelab.io/dns: public`) + external-dns → UniFi local DNS (everything, LAN/VPN-only) |
+| DNS | Split-horizon: Cloudflare DDNS updater (public hostnames → home WAN IP) + external-dns → UniFi local DNS (everything, LAN/VPN-only) |
+| Public exposure | UDM Pro port-forwards 80/443 straight to Traefik's LB IP — no Cloudflare Tunnel |
 | Dashboard / metrics | Prometheus + Grafana (`kube-prometheus-stack`), node-exporter + kube-state-metrics, `metrics-server` for `kubectl top` |
 | Network flow visibility | Hubble UI (ships with Cilium) |
 | Continuous delivery | ArgoCD, app-of-apps, watching this repo |
@@ -55,27 +56,46 @@ cluster VLAN to reach it. Same requirement for
 management API (`10.10.10.1:443`) needs to be reachable from the cluster
 VLAN too.
 
-## DNS (split-horizon)
+## DNS (split-horizon) and public exposure
 
-Two independent `external-dns` instances watch the same Ingresses and
-write to two different places — nothing is public unless explicitly opted
-in:
+The UDM Pro port-forwards 80/443 directly to Traefik's LB IP
+(`10.10.100.200`) — no Cloudflare Tunnel. That means the public Cloudflare
+A record for an exposed hostname has to equal the home's WAN IP, not any
+in-cluster address, which rules out the usual "external-dns watches
+Ingresses and points records at the LB IP" pattern (that LB IP is a
+private, unroutable address from the internet's point of view). So the two
+halves of the split-horizon use genuinely different mechanisms:
 
-- [`external-dns/`](kubernetes/core/services/external-dns/) → Cloudflare.
-  Only Ingresses annotated `homelab.io/dns: public` get a record here
-  (currently just ArgoCD, for its GitHub webhook). Everything else is
-  invisible from the public internet, full stop.
-- [`external-dns-internal/`](kubernetes/core/services/external-dns-internal/)
+- **Public** — [`external-dns/`](kubernetes/core/services/external-dns/)
+  (repurposed; still the name/namespace/secret, see the comment in
+  `ddns-deployment.yaml`) runs a Cloudflare DDNS updater
+  ([favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns))
+  that keeps a static, explicit list of hostnames (`DOMAINS` env var)
+  pointed at the home WAN IP. Nothing is public unless its hostname is in
+  that list — adding one is a one-line git change. Records are DNS-only
+  (grey cloud, `PROXIED=false`): Cloudflare's proxy caps uploads at 100MB
+  on these plans, which would break Nextcloud and hurt Jellyfin/Plex
+  streaming.
+- **Internal** — [`external-dns-internal/`](kubernetes/core/services/external-dns-internal/)
   → UniFi's own local DNS, via the
   [UniFi webhook provider](https://github.com/home-operations/external-dns-unifi-webhook).
-  No filter — every Ingress gets a record here, resolvable only on the LAN
-  or over the UniFi VPN. This is also why ArgoCD resolves to the private
-  LB IP directly for LAN/VPN clients instead of round-tripping through
-  Cloudflare once it's genuinely public later.
+  No filter — every Ingress gets a record here (including the public
+  ones), resolvable only on the LAN or over the UniFi VPN, pointed at
+  Traefik's private LB IP directly. No hairpin NAT for LAN/VPN clients.
 
 Needs a UniFi API key (Settings → Control Plane → Integrations → Create
 API Key — Super Admin only to create it, can downgrade after) in
 [`external-dns-internal/unifi-api-key.sops.yaml`](kubernetes/core/services/external-dns-internal/unifi-api-key.sops.yaml).
+
+### Services still hosted on the NAS
+
+[`kubernetes/apps/services/nas-passthrough/`](kubernetes/apps/services/nas-passthrough/)
+is a thin Traefik passthrough (Service+Endpoints pointing at the NAS IP,
+plus an Ingress) for public hostnames whose backend hasn't been migrated
+into the cluster yet: `wiki.nvlab.fr` (:3000), `jellyfin.nvlab.fr`
+(:8096), `media.nvlab.fr` / Plex (:32400). Traefik still terminates TLS
+for these; only the backend is off-cluster. Adding a new one means a new
+file there plus adding the hostname to the DDNS updater's `DOMAINS`.
 
 ## Repo layout
 
@@ -89,7 +109,9 @@ kubernetes/
     root.yaml          App-of-apps entrypoint
     applications/      One Application manifest per core service
     services/          The actual Helm values / manifests each one deploys
-  apps/              (not yet — business/media apps come next)
+  apps/              Business apps (Vaultwarden, Nextcloud, NAS passthrough)
+    applications/      One Application manifest per app
+    services/          The actual manifests each one deploys
 cli/                 Install AND manage the cluster — one CLI, see below
 ```
 
@@ -122,11 +144,10 @@ More sections (upgrades, node maintenance, …) land here over time.
    node MACs/hostnames (IPs already match the Network section).
 3. Edit [`kubernetes/core/services/nfs-provisioner/values.yaml`](kubernetes/core/services/nfs-provisioner/values.yaml)
    with your Unraid NAS's real IP and export path.
-4. Fill in a real Cloudflare API token and your domain:
+4. Fill in a real Cloudflare API token:
    [`kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml`](kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml)
-   (then `sops -e -i` it) and
-   [`kubernetes/core/services/external-dns/values.yaml`](kubernetes/core/services/external-dns/values.yaml)
-   (`domainFilters`).
+   (then `sops -e -i` it) and your domain(s) in the `DOMAINS` env var of
+   [`kubernetes/core/services/external-dns/ddns-deployment.yaml`](kubernetes/core/services/external-dns/ddns-deployment.yaml).
 5. The repo URL baked into every `Application`/`root.yaml` is
    `https://github.com/lxup/homelab.git` on `main` — update it if you fork
    or rename.

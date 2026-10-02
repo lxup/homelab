@@ -1,6 +1,8 @@
-# No homelab.io/dns: public — LAN/VPN only for now (same reasoning as
-# Grafana/Hubble). DNS-01 still gets a real trusted cert regardless, since
-# it only needs the Cloudflare API, not public reachability.
+# Public via the UDM Pro's 80/443 port-forward to Traefik's LB IP — the
+# Cloudflare A record for bitwarden.nvlab.fr is kept pointed at the home
+# WAN IP by the DDNS updater (kubernetes/core/services/external-dns/),
+# not by an ingress annotation. DNS-01 cert issuance only needs the
+# Cloudflare API, independent of any of this.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

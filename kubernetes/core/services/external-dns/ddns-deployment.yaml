@@ -1,0 +1,62 @@
+# Why DDNS instead of external-dns for public records: the UDM Pro port-
+# forwards 80/443 straight to Traefik's LoadBalancer IP (10.10.100.200),
+# which is a private LAN address. A Cloudflare record pointing at that IP
+# would be unreachable from the public internet — Cloudflare's edge can't
+# route to RFC1918 space. The record Cloudflare needs is your home's public
+# WAN IP, which only a DDNS updater (favonia/cloudflare-ddns) can track.
+# external-dns's ingress-driven model (target = Service/Ingress LB IP) is
+# the wrong tool for this, so it was retired here (see kustomization.yaml).
+#
+# LAN clients still resolve these same hostnames straight to Traefik's
+# internal IP via external-dns-internal (../external-dns-internal/) — no
+# hairpin NAT needed.
+#
+# PROXIED=false (DNS-only / grey cloud) for all hosts: Cloudflare's proxy
+# enforces a hard 100MB request/upload cap on these plans, which would
+# break Nextcloud uploads and hurt Jellyfin/Plex streaming. Revisit on a
+# per-host basis later if WAF/DDoS protection on the low-bandwidth hosts
+# (argocd, bitwarden) becomes worth that trade-off.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-ddns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflare-ddns
+  template:
+    metadata:
+      labels:
+        app: cloudflare-ddns
+    spec:
+      containers:
+        - name: cloudflare-ddns
+          image: ghcr.io/favonia/cloudflare-ddns:1
+          env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-api-token
+                  key: api-token
+            - name: DOMAINS
+              value: argocd.nvlab.fr,bitwarden.nvlab.fr,cloud.nvlab.fr,jellyfin.nvlab.fr,media.nvlab.fr,wiki.nvlab.fr
+            - name: PROXIED
+              value: "false"
+            - name: IP6_PROVIDER
+              value: "none"
+            - name: UPDATE_CRON
+              value: "@every 5m"
+            - name: DELETE_ON_STOP
+              value: "false"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false

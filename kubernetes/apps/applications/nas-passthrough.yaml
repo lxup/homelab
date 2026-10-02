@@ -1,20 +1,17 @@
-# Name/path/namespace kept as "external-dns" even though this now deploys
-# the Cloudflare DDNS updater, not the external-dns chart — see
-# kubernetes/core/services/external-dns/ddns-deployment.yaml for why.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: external-dns
+  name: nas-passthrough
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/lxup/homelab.git
     targetRevision: main
-    path: kubernetes/core/services/external-dns
+    path: kubernetes/apps/services/nas-passthrough
   destination:
     server: https://kubernetes.default.svc
-    namespace: external-dns
+    namespace: nas-passthrough
   syncPolicy:
     automated:
       prune: true

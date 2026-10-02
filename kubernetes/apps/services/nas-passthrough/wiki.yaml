@@ -1,0 +1,45 @@
+# No selector on the Service — endpoints are supplied manually below
+# instead of via pod labels, the standard pattern for routing to an IP
+# that lives outside the cluster (the NAS).
+apiVersion: v1
+kind: Service
+metadata:
+  name: wiki-nas
+spec:
+  ports:
+    - port: 3000
+      targetPort: 3000
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: wiki-nas
+subsets:
+  - addresses:
+      - ip: 10.10.10.101
+    ports:
+      - port: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wiki-nas
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - wiki.nvlab.fr
+      secretName: wiki-nas-tls
+  rules:
+    - host: wiki.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wiki-nas
+                port:
+                  number: 3000
