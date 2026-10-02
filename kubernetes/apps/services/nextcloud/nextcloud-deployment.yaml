@@ -3,10 +3,12 @@
 # a time, each one let to run its own `occ upgrade` before moving to the
 # next. See README for the climb log.
 #
-# data volume is readOnly: true on purpose during migration testing — the
-# OLD instance on the NAS is still live and still the one actually being
-# used, so this one must not write to shared files yet. Flip to false
-# only at final cutover, same moment the old instance gets stopped.
+# data volume is read-write against the SAME NFS share the old NAS
+# instance still uses — occ requires write access to /data even just to
+# run `occ status` (log file, writability checks), so this can't be
+# deferred to final cutover like the DB copy was. Avoid using the old
+# instance while this climb is in progress to prevent both writing
+# concurrently; final cutover = stop the old instance for good + DNS flip.
 #
 # DB copied from the NAS via pg_dump/pg_restore (136 tables, clean).
 apiVersion: apps/v1
@@ -61,7 +63,6 @@ spec:
               mountPath: /var/www/html/custom_apps
             - name: data
               mountPath: /data
-              readOnly: true
           resources:
             requests:
               cpu: 200m
@@ -83,4 +84,3 @@ spec:
           nfs:
             server: 10.10.10.101
             path: /mnt/user/nextcloud
-            readOnly: true
