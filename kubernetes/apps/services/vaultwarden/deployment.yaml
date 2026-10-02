@@ -1,0 +1,45 @@
+# replicas: 0 on purpose — flip to 1 only after the NAS data migration Job
+# (run once, imperatively, see cli or README) has copied the existing
+# vault into vaultwarden-data. Starting this before that finishes would
+# let Vaultwarden create a fresh empty DB in the PVC first, which the
+# migration copy would then either clobber or collide with.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultwarden
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate # single ReadWriteOnce volume — never run two pods at once
+  selector:
+    matchLabels:
+      app: vaultwarden
+  template:
+    metadata:
+      labels:
+        app: vaultwarden
+    spec:
+      containers:
+        - name: vaultwarden
+          image: vaultwarden/server:1.37.3
+          env:
+            - name: DOMAIN
+              value: https://bitwarden.nvlab.fr
+            - name: SIGNUPS_ALLOWED
+              value: "false" # existing vault, migrated users only
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: vaultwarden-data
