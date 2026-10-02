@@ -1,3 +1,11 @@
+# GitOps renders this chart via `kustomize --enable-helm` (= `helm
+# template`), which has no real Helm-hook semantics — the pre-upgrade
+# check Job gets applied as a plain resource instead of running in order,
+# racing the ServiceAccount it needs. Longhorn's own docs say to disable
+# it for ArgoCD/GitOps installs.
+preUpgradeChecker:
+  jobEnabled: false
+
 persistence:
   defaultClass: true
   defaultClassReplicaCount: 3 # one replica per node — we only have 3

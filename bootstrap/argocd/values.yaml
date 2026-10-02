@@ -16,17 +16,21 @@ server:
 
 configs:
   cm:
-    # Lets kustomize inflate `helmCharts:` blocks (used all over
-    # kubernetes/core/services/*).
-    kustomize.buildOptions: "--enable-helm"
+    # --enable-helm: inflate `helmCharts:` blocks (used all over
+    #   kubernetes/core/services/*).
+    # --enable-alpha-plugins + --enable-exec: required for the ksops exec
+    #   KRM function (ksops-generator.yaml) to run at all.
+    kustomize.buildOptions: "--enable-helm --enable-alpha-plugins --enable-exec"
 
 # ksops (https://github.com/viaduct-ai/kustomize-sops) lets `kustomize
 # build` decrypt SOPS-encrypted YAML inline via a `ksops-generator.yaml`
-# next to the secret, instead of committing cleartext. `ksops install
-# --with-kustomize` replaces the repo-server's kustomize binary with a
-# ksops-aware build — no plugin-directory wiring needed. The Age *private*
-# key to actually decrypt comes from the `sops-age` Secret (see above),
-# never from this file.
+# next to the secret, instead of committing cleartext. Only the `ksops`
+# binary is installed onto PATH — NOT `--with-kustomize`, which would
+# replace the repo-server's own kustomize with the one bundled in the
+# ksops image; that one's built against a different `helm` CLI interface
+# than ArgoCD ships and crashes on `helm version -c --short`. The Age
+# *private* key to actually decrypt comes from the `sops-age` Secret (see
+# above), never from this file.
 repoServer:
   volumes:
     - name: custom-tools
@@ -38,15 +42,12 @@ repoServer:
   initContainers:
     - name: install-ksops
       image: viaductoss/ksops:v4.5.1
-      command: ["/usr/local/bin/ksops", "install", "--with-kustomize", "/custom-tools"]
+      command: ["/usr/local/bin/ksops", "install", "/custom-tools"]
       volumeMounts:
         - name: custom-tools
           mountPath: /custom-tools
 
   volumeMounts:
-    - name: custom-tools
-      mountPath: /usr/local/bin/kustomize
-      subPath: kustomize
     - name: custom-tools
       mountPath: /usr/local/bin/ksops
       subPath: ksops
