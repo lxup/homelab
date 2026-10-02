@@ -1,14 +1,15 @@
-# replicas: 0 on purpose — flip to 1 only after the NAS data migration Job
-# (run once, imperatively, see cli or README) has copied the existing
-# vault into vaultwarden-data. Starting this before that finishes would
-# let Vaultwarden create a fresh empty DB in the PVC first, which the
-# migration copy would then either clobber or collide with.
+# Data migrated from the NAS (appdata/bitwarden) via a one-off Job —
+# db.sqlite3, rsa keys, config.json, sends and icon_cache all copied
+# cleanly. 4 individual attachment files couldn't be read (Unraid's
+# "Public" NFS mode all_squash's every client to nobody, independent of
+# the reading pod's UID) — everything else, including every password and
+# the encryption keys, is intact.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: vaultwarden
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume — never run two pods at once
   selector:
