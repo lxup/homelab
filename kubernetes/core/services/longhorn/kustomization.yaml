@@ -6,6 +6,9 @@ namespace: longhorn-system
 resources:
   - namespace.yaml
 
+generators:
+  - ksops-generator.yaml
+
 helmCharts:
   - name: longhorn
     repo: https://charts.longhorn.io

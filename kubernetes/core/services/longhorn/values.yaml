@@ -8,7 +8,13 @@ preUpgradeChecker:
 
 persistence:
   defaultClass: true
-  defaultClassReplicaCount: 3 # one replica per node — we only have 3
+  # 2, not 3 — tolerates 1 node down (same as the rest of this cluster's HA
+  # story) without paying full triple storage/write overhead on every
+  # single app by default. Real data-loss protection comes from the R2
+  # backup target below, not from stacking replicas; apps that genuinely
+  # need stronger local durability can request a dedicated StorageClass
+  # with a higher count instead of raising the default for everyone.
+  defaultClassReplicaCount: 2
 
 defaultSettings:
   defaultDataPath: /var/lib/longhorn
@@ -18,3 +24,10 @@ defaultSettings:
   # we never did that, so every node sat with zero disks configured and
   # every volume stayed permanently unschedulable.
   createDefaultDiskLabeledNodes: false
+
+defaultBackupStore:
+  # S3-compatible target — Cloudflare R2, bucket "homelab". R2 has no real
+  # regions; "auto" is Cloudflare's own documented placeholder for S3
+  # clients that require one.
+  backupTarget: s3://homelab@auto/
+  backupTargetCredentialSecret: longhorn-backup-target
