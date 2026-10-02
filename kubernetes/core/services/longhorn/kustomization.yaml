@@ -5,6 +5,7 @@ namespace: longhorn-system
 
 resources:
   - namespace.yaml
+  - recurring-job.yaml
 
 generators:
   - ksops-generator.yaml
