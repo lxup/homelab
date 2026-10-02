@@ -1,0 +1,98 @@
+# kube-prometheus-stack: Prometheus + Grafana + Alertmanager + node-exporter
+# (per-node CPU/RAM/disk) + kube-state-metrics (pod/deployment/namespace
+# inventory). Sized modest on purpose — these are 3 small i5 boxes, not a
+# datacenter.
+
+grafana:
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-production
+    hosts:
+      - grafana.nvlab.fr
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.nvlab.fr
+
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: longhorn
+    size: 2Gi
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+prometheus:
+  prometheusSpec:
+    retention: 15d
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+# Talos is the OS, not a kubeadm distro — these kube-controller-manager /
+# kube-scheduler ServiceMonitors target a component endpoint Talos doesn't
+# expose the usual way, they'd just sit permanently "down" in Prometheus.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false # Cilium replaces kube-proxy entirely — nothing to scrape

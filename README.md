@@ -24,6 +24,8 @@ Pure GitOps homelab running on 3 bare-metal nodes, provisioned with
 | File storage | `nfs-subdir-external-provisioner` → Unraid NAS |
 | GPU passthrough | Intel Device Plugin (`gpu.intel.com/i915`), for Plex/Jellyfin Quick Sync transcoding |
 | DNS | external-dns → Cloudflare |
+| Dashboard / metrics | Prometheus + Grafana (`kube-prometheus-stack`), node-exporter + kube-state-metrics, `metrics-server` for `kubectl top` |
+| Network flow visibility | Hubble UI (ships with Cilium) |
 | Continuous delivery | ArgoCD, app-of-apps, watching this repo |
 | Secrets | [SOPS](https://github.com/getsops/sops) + [Age](https://github.com/FiloSottile/age) — encrypted in git, no external secret store |
 | App builds | GitHub Actions → GHCR, ArgoCD Image Updater bumps tags |
@@ -120,6 +122,20 @@ you lose it, every encrypted file in this repo becomes unrecoverable).
   (wired up in `bootstrap/argocd/values.yaml`)
 
 Everything in git stays encrypted; only the cluster can decrypt it.
+
+## Dashboards
+
+| What | URL | Login |
+|---|---|---|
+| ArgoCD | `argocd.nvlab.fr` | `admin` / `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' \| base64 -d` |
+| Grafana | `grafana.nvlab.fr` | credentials in `kubernetes/core/services/monitoring/grafana-admin.sops.yaml` (sops-encrypted) |
+| Hubble UI | `hubble.nvlab.fr` | none — read-only network flow map |
+| Longhorn UI | not exposed via Ingress yet — `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80` | none |
+
+Grafana ships with the default kube-prometheus-stack dashboards (node
+resource usage, pod resource usage, cluster capacity) already imported —
+nothing to configure after first login. `kubectl top nodes` / `kubectl top
+pods` work immediately too (metrics-server).
 
 ## What's deliberately not GitOps-managed
 

@@ -102,6 +102,8 @@ const CHECKS = [
   argoAppCheck("external-dns", "external-dns"),
   argoAppCheck("cilium-config", "Cilium LB config"),
   argoAppCheck("intel-gpu-plugin", "Intel GPU plugin"),
+  argoAppCheck("monitoring", "Prometheus + Grafana"),
+  argoAppCheck("metrics-server", "metrics-server"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };

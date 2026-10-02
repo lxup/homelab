@@ -1,0 +1,27 @@
+# Prometheus + Grafana + Alertmanager + node-exporter + kube-state-metrics.
+# This is the "full cluster dashboard" layer: per-node CPU/RAM/disk,
+# per-pod resource usage, cluster capacity trends over time — complements
+# Longhorn UI (storage detail) and Hubble UI (network flows).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/core/services/monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # huge CRD set (Prometheus Operator) — avoids the 262144-byte annotation limit

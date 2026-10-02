@@ -1,0 +1,21 @@
+# Powers `kubectl top nodes/pods` for quick CLI checks — separate from
+# Prometheus (which also collects this data, but isn't as fast for a
+# one-off "what's using CPU right now" look).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/core/services/metrics-server
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
