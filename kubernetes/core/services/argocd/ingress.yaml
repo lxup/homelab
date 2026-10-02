@@ -1,3 +1,7 @@
+# Public (needed for the GitHub webhook): UDM Pro port-forwards 80/443 to
+# Traefik's LB IP, and the Cloudflare A record for argocd.nvlab.fr is kept
+# pointed at the home WAN IP by the DDNS updater (../external-dns/), not by
+# an ingress annotation.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -7,10 +11,6 @@ metadata:
     kubernetes.io/ingress.class: traefik
     cert-manager.io/cluster-issuer: letsencrypt-production
     traefik.ingress.kubernetes.io/service.serversscheme: h2c
-    # Opt-in flag read by external-dns's annotationFilter — this is the
-    # only Ingress meant to get a real public Cloudflare record (needed
-    # for the GitHub webhook). See kubernetes/core/services/external-dns/values.yaml.
-    homelab.io/dns: public
 spec:
   tls:
     - hosts:

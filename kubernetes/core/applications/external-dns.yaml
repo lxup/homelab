@@ -1,3 +1,6 @@
+# Name/path/namespace kept as "external-dns" even though this now deploys
+# the Cloudflare DDNS updater, not the external-dns chart — see
+# kubernetes/core/services/external-dns/ddns-deployment.yaml for why.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

@@ -1,14 +1,14 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+# Repurposed from the external-dns Helm chart to a Cloudflare DDNS updater —
+# see ddns-deployment.yaml for why. Namespace/secret name kept as-is
+# (cloudflare-api-token already lives here) to avoid an Application
+# rename/recreate for a purely cosmetic improvement.
 namespace: external-dns
 
 generators:
   - ksops-generator.yaml
 
-helmCharts:
-  - name: external-dns
-    repo: https://kubernetes-sigs.github.io/external-dns/
-    version: 1.22.0
-    releaseName: external-dns
-    valuesFile: values.yaml
+resources:
+  - ddns-deployment.yaml
