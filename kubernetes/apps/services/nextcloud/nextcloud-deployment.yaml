@@ -1,0 +1,84 @@
+# Starts at :25-apache to match the migrated database exactly (Nextcloud
+# refuses to skip major versions) — climbs 25 -> 35 one image-tag bump at
+# a time, each one let to run its own `occ upgrade` before moving to the
+# next. See README for the climb log.
+#
+# data volume is readOnly: true on purpose during migration testing — the
+# OLD instance on the NAS is still live and still the one actually being
+# used, so this one must not write to shared files yet. Flip to false
+# only at final cutover, same moment the old instance gets stopped.
+#
+# replicas: 0 until the initial DB copy (pg_dump from the NAS) has landed
+# in the new postgres — see cli/README or run it manually first.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+spec:
+  replicas: 0
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      securityContext:
+        fsGroup: 33 # www-data, matches the official image's runtime user
+      initContainers:
+        - name: seed-config
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /config/config.php ]; then
+                echo "Seeding config.php (first run)"
+                cp /seed/config.php /config/config.php
+              else
+                echo "config.php already present, leaving it alone"
+              fi
+          volumeMounts:
+            - name: seed
+              mountPath: /seed
+              readOnly: true
+            - name: config
+              mountPath: /config
+      containers:
+        - name: nextcloud
+          image: nextcloud:25-apache
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: config
+              mountPath: /var/www/html/config
+            - name: custom-apps
+              mountPath: /var/www/html/custom_apps
+            - name: data
+              mountPath: /data
+              readOnly: true
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2
+              memory: 1Gi
+      volumes:
+        - name: seed
+          secret:
+            secretName: nextcloud-config-seed
+        - name: config
+          persistentVolumeClaim:
+            claimName: nextcloud-config
+        - name: custom-apps
+          persistentVolumeClaim:
+            claimName: nextcloud-custom-apps
+        - name: data
+          nfs:
+            server: 10.10.10.101
+            path: /mnt/user/nextcloud
+            readOnly: true

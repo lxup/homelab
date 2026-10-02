@@ -1,0 +1,32 @@
+# Host matches the final target (cloud.nvlab.fr, already in config.php's
+# trusted_domains) on purpose, BUT there's already a manual DNS entry for
+# cloud.nvlab.fr pointing at the NAS (both in Cloudflare and UniFi local
+# DNS) — external-dns won't touch a record it doesn't already own, so it
+# will NOT repoint cloud.nvlab.fr here, which is exactly what we want
+# while the old instance is still the live one. Test this with
+# `curl --resolve cloud.nvlab.fr:443:10.10.100.200 ...` or a temporary
+# /etc/hosts entry on your own machine — real DNS only gets repointed at
+# final cutover, same moment the NAS instance stops.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nextcloud
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - cloud.nvlab.fr
+      secretName: nextcloud-tls
+  rules:
+    - host: cloud.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nextcloud
+                port:
+                  number: 80
