@@ -12,4 +12,9 @@ persistence:
 
 defaultSettings:
   defaultDataPath: /var/lib/longhorn
-  createDefaultDiskLabeledNodes: true
+  # false (the real default): Longhorn auto-creates a default disk on every
+  # node as it joins, no manual labeling needed. `true` requires manually
+  # labeling each node `node.longhorn.io/create-default-disk=true` first —
+  # we never did that, so every node sat with zero disks configured and
+  # every volume stayed permanently unschedulable.
+  createDefaultDiskLabeledNodes: false
