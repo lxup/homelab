@@ -10,9 +10,6 @@ provider:
       repository: ghcr.io/home-operations/external-dns-unifi-webhook
       tag: v0.10.12
     env:
-      # UDM Pro's address on the main LAN — the cluster VLAN
-      # (10.10.100.0/24) needs a UDM firewall rule allowing it to reach
-      # this on 443, since by default inter-VLAN traffic isn't assumed.
       - name: UNIFI_HOST
         value: https://10.10.10.1
       - name: UNIFI_API_KEY
@@ -21,7 +18,7 @@ provider:
             name: unifi-dns-secret
             key: UNIFI_API_KEY
       - name: UNIFI_SKIP_TLS_VERIFY
-        value: "true" # UDM Pro's local cert is self-signed
+        value: "true"
     livenessProbe:
       httpGet:
         path: /healthz
