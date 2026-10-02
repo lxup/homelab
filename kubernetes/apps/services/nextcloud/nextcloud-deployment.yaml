@@ -40,6 +40,8 @@ spec:
               else
                 echo "config.php already present, leaving it alone"
               fi
+              chmod 0775 /config
+              chmod 0664 /config/config.php
           volumeMounts:
             - name: seed
               mountPath: /seed
