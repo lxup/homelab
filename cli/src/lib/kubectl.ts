@@ -30,6 +30,23 @@ export async function getNodesStatus(): Promise<NodeStatus | null> {
   return { total: list.items.length, ready };
 }
 
+/** Hostnames of nodes already Ready in the cluster — empty if unreachable/no cluster yet. */
+export async function getReadyNodeNames(): Promise<Set<string>> {
+  const list = await kubectlJson<{
+    items: Array<{
+      metadata: { name: string };
+      status: { conditions: Array<{ type: string; status: string }> };
+    }>;
+  }>(["get", "nodes"]);
+  if (!list) return new Set();
+
+  return new Set(
+    list.items
+      .filter((n) => n.status.conditions.some((c) => c.type === "Ready" && c.status === "True"))
+      .map((n) => n.metadata.name),
+  );
+}
+
 export async function getDaemonSetStatus(namespace: string, name: string) {
   const ds = await kubectlJson<{ status: { desiredNumberScheduled: number; numberReady: number } }>(
     ["get", "daemonset", name, "-n", namespace],

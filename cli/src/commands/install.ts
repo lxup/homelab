@@ -3,6 +3,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import { Listr } from "listr2";
 import type { InstallCtx } from "../lib/context.js";
+import { getReadyNodeNames } from "../lib/kubectl.js";
 import { kubeconfigPath } from "../lib/paths.js";
 import { loadTalconfig } from "../lib/talconfig.js";
 
@@ -49,6 +50,7 @@ export async function runInstall() {
 
   const topo = await loadTalconfig();
   const clusterAlreadyUp = existsSync(kubeconfigPath);
+  const readyNodes = clusterAlreadyUp ? await getReadyNodeNames() : new Set<string>();
 
   p.log.message(
     clusterAlreadyUp
@@ -56,13 +58,19 @@ export async function runInstall() {
       : "No cluster yet — the first control-plane node selected below will bootstrap etcd.",
   );
 
+  // Nodes already Ready are unchecked by default: re-selecting one does no
+  // damage (Talos refuses --insecure apply-config once a node has left
+  // maintenance mode — no wipe, no reinstall), but it does fail that node's
+  // step and, since steps run with exitOnError, aborts the whole run before
+  // confirming the *new* node you actually care about joined cleanly.
   const selected = await p.multiselect({
     message: "Which node(s) are booted (on the USB/ISO) and reachable right now?",
     options: topo.nodes.map((n) => ({
       value: n.hostname,
       label: `${n.hostname} (${n.ipAddress})`,
+      hint: readyNodes.has(n.hostname) ? "already in cluster" : undefined,
     })),
-    initialValues: topo.nodes.map((n) => n.hostname),
+    initialValues: topo.nodes.filter((n) => !readyNodes.has(n.hostname)).map((n) => n.hostname),
   });
 
   if (p.isCancel(selected) || selected.length === 0) {
@@ -126,7 +134,10 @@ export async function runInstall() {
     );
   }
 
-  const remaining = topo.nodes.filter((n) => !selected.includes(n.hostname));
+  // Nodes neither already-Ready nor just-installed this run still need booting.
+  const remaining = topo.nodes.filter(
+    (n) => !readyNodes.has(n.hostname) && !selected.includes(n.hostname),
+  );
   p.outro(
     remaining.length > 0
       ? pc.green(
