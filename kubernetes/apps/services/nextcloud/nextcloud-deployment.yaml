@@ -42,6 +42,7 @@ spec:
               fi
               chmod 0775 /config
               chmod 0664 /config/config.php
+              chown 33:33 /config/config.php # occ requires exact UID ownership match, not just group-write
           volumeMounts:
             - name: seed
               mountPath: /seed
