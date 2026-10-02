@@ -8,7 +8,10 @@ provider:
   webhook:
     image:
       repository: ghcr.io/home-operations/external-dns-unifi-webhook
-      tag: v0.10.12
+      # No semver-tagged images published yet (checked the ghcr.io package
+      # listing directly — only `main` and sha256 digests exist today).
+      # The project's own README uses `main` too for the same reason.
+      tag: main
     env:
       - name: UNIFI_HOST
         value: https://10.10.10.1
