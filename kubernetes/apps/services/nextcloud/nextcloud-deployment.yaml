@@ -53,7 +53,7 @@ spec:
               mountPath: /config
       containers:
         - name: nextcloud
-          image: nextcloud:25-apache
+          image: nextcloud:26-apache
           ports:
             - containerPort: 80
           volumeMounts:
