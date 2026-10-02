@@ -3,6 +3,13 @@
 # inventory). Sized modest on purpose — these are 3 small i5 boxes, not a
 # datacenter.
 
+# CRDs are installed separately in kustomization.yaml (kustomize doesn't
+# render a chart's crds/ directory) — stops the chart's own CRD-install Job
+# (a Helm hook, meaningless under kustomize rendering) from being applied
+# as a plain resource and erroring out.
+crds:
+  enabled: false
+
 grafana:
   admin:
     existingSecret: grafana-admin
