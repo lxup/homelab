@@ -1,0 +1,14 @@
+# Point this at your Unraid NAS's NFS export. Enable the export in the
+# Unraid UI first (Shares -> your share -> export as NFS), then fill in the
+# real IP/path below. The NAS stays on the main LAN (10.10.10.0/24) while
+# the cluster is on its own VLAN (10.10.100.0/24) — add a UDM Pro firewall
+# rule allowing cluster -> NAS on NFS ports (2049, 111) or this will hang.
+nfs:
+  server: 10.10.10.101
+  path: /mnt/user/k8s
+
+storageClass:
+  name: nfs
+  defaultClass: false # Longhorn stays the default; this is opt-in per-PVC
+  reclaimPolicy: Retain # media/files on the NAS should survive a PVC delete
+  accessModes: ReadWriteMany

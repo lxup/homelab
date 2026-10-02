@@ -1,0 +1,60 @@
+# One-shot `helm install` values for ArgoCD, applied imperatively by
+# bootstrap/cli before GitOps exists to manage anything (chicken-and-egg).
+# Re-running `helm upgrade --install` with this file is how you upgrade
+# ArgoCD itself later — its own Deployment is deliberately NOT managed by a
+# GitOps Application, so a bad sync can never take down the thing doing the
+# syncing. Only its Ingress lives under kubernetes/core/services/argocd.
+#
+# IMPORTANT: the `sops-age` Secret this file mounts must already exist in
+# the `argocd` namespace before this is applied, or the repo-server pod
+# hangs forever on a missing volume mount (helm's --wait times out). The
+# CLI creates it first for exactly this reason — see src/commands/install.ts.
+server:
+  insecure: true # no TLS cert yet on first boot; cert-manager + Ingress take over once kubernetes/core is live
+  extraArgs:
+    - --insecure
+
+configs:
+  cm:
+    # Lets kustomize inflate `helmCharts:` blocks (used all over
+    # kubernetes/core/services/*).
+    kustomize.buildOptions: "--enable-helm"
+
+# ksops (https://github.com/viaduct-ai/kustomize-sops) lets `kustomize
+# build` decrypt SOPS-encrypted YAML inline via a `ksops-generator.yaml`
+# next to the secret, instead of committing cleartext. `ksops install
+# --with-kustomize` replaces the repo-server's kustomize binary with a
+# ksops-aware build — no plugin-directory wiring needed. The Age *private*
+# key to actually decrypt comes from the `sops-age` Secret (see above),
+# never from this file.
+repoServer:
+  volumes:
+    - name: custom-tools
+      emptyDir: {}
+    - name: sops-age
+      secret:
+        secretName: sops-age
+
+  initContainers:
+    - name: install-ksops
+      image: viaductoss/ksops:v4.5.1
+      command: ["/usr/local/bin/ksops", "install", "--with-kustomize", "/custom-tools"]
+      volumeMounts:
+        - name: custom-tools
+          mountPath: /custom-tools
+
+  volumeMounts:
+    - name: custom-tools
+      mountPath: /usr/local/bin/kustomize
+      subPath: kustomize
+    - name: custom-tools
+      mountPath: /usr/local/bin/ksops
+      subPath: ksops
+    - name: sops-age
+      mountPath: /.config/sops/age
+
+  env:
+    - name: XDG_CONFIG_HOME
+      value: /.config
+    - name: SOPS_AGE_KEY_FILE
+      value: /.config/sops/age/keys.txt

@@ -1,0 +1,16 @@
+service:
+  type: LoadBalancer
+
+ports:
+  web:
+    redirections:
+      entryPoint:
+        to: websecure
+        scheme: https
+  websecure:
+    tls:
+      enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true

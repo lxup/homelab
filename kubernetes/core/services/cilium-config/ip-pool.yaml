@@ -1,0 +1,11 @@
+# Dedicated cluster VLAN (10.10.100.0/24, see talos/talconfig.yaml) — this
+# is the LoadBalancer range reserved on that VLAN's DHCP (.50-.150), so no
+# collision with DHCP-assigned clients.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: homelab-pool
+spec:
+  blocks:
+    - start: 10.10.100.200
+      stop: 10.10.100.250

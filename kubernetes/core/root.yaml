@@ -1,0 +1,26 @@
+# App-of-apps root. Applied once, imperatively, by cli/
+# (src/steps/11-apply-root-app.js) — from then on ArgoCD watches this path
+# itself and every file added under applications/ becomes a new Application,
+# no further manual kubectl apply needed.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/core/applications
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

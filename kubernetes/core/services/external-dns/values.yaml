@@ -1,0 +1,39 @@
+provider:
+  name: cloudflare
+
+env:
+  - name: CF_API_TOKEN
+    valueFrom:
+      secretKeyRef:
+        name: cloudflare-api-token
+        key: api-token
+
+sources:
+  - ingress
+
+domainFilters:
+  - nvlab.fr
+
+# Traefik's LoadBalancer IP (kubernetes/core/services/cilium-config) is a
+# private LAN address (10.10.100.200-.250) — NOT proxied through Cloudflare
+# (orange cloud), because Cloudflare's edge can't reach a private IP.
+# Records are created DNS-only (grey cloud): either
+#   (a) resolvable only on your LAN (fine if you just want *.yourdomain.com
+#       instead of IPs for internal services), or
+#   (b) you port-forward 443 on the UDM Pro to Traefik's LB IP, in which
+#       case flip this on to get Cloudflare's proxy/WAF/caching in front.
+# extraArgs:
+#   - --cloudflare-proxied
+
+policy: sync
+registry: txt
+txtOwnerId: homelab
+interval: 1m
+
+resources:
+  requests:
+    cpu: 20m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi

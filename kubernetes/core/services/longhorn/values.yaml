@@ -1,0 +1,7 @@
+persistence:
+  defaultClass: true
+  defaultClassReplicaCount: 3 # one replica per node — we only have 3
+
+defaultSettings:
+  defaultDataPath: /var/lib/longhorn
+  createDefaultDiskLabeledNodes: true

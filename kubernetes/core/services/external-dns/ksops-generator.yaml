@@ -1,0 +1,13 @@
+# Decrypted at render time by the ksops plugin wired into ArgoCD's
+# repo-server (bootstrap/argocd/values.yaml) — never produces plaintext on
+# disk in this repo.
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: cloudflare-api-token-generator
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ksops
+files:
+  - ./cloudflare-api-token.sops.yaml
