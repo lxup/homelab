@@ -11,8 +11,6 @@ spec:
     repoURL: https://github.com/lxup/homelab.git
     targetRevision: main
     path: kubernetes/core/services/nfs-provisioner
-    directory:
-      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: nfs-provisioner
