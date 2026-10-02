@@ -23,7 +23,7 @@ Pure GitOps homelab running on 3 bare-metal nodes, provisioned with
 | Block storage | Longhorn (local NVMe, replicated across all 3 nodes) |
 | File storage | `nfs-subdir-external-provisioner` → Unraid NAS |
 | GPU passthrough | Intel Device Plugin (`gpu.intel.com/i915`), for Plex/Jellyfin Quick Sync transcoding |
-| DNS | external-dns → Cloudflare |
+| DNS | Split-horizon: external-dns → Cloudflare (public, opt-in via `homelab.io/dns: public`) + external-dns → UniFi local DNS (everything, LAN/VPN-only) |
 | Dashboard / metrics | Prometheus + Grafana (`kube-prometheus-stack`), node-exporter + kube-state-metrics, `metrics-server` for `kubectl top` |
 | Network flow visibility | Hubble UI (ships with Cilium) |
 | Continuous delivery | ArgoCD, app-of-apps, watching this repo |
@@ -50,7 +50,32 @@ Add a static DHCP reservation per node MAC -> its final IP in the UniFi
 controller before first boot (see the comment at the top of
 `talos/talconfig.yaml` for why). The Unraid NAS stays on the main LAN, so
 NFS traffic crosses VLANs — add a UDM Pro firewall rule allowing the
-cluster VLAN to reach it.
+cluster VLAN to reach it. Same requirement for
+`kubernetes/core/services/external-dns-internal/` → the UDM Pro's own
+management API (`10.10.10.1:443`) needs to be reachable from the cluster
+VLAN too.
+
+## DNS (split-horizon)
+
+Two independent `external-dns` instances watch the same Ingresses and
+write to two different places — nothing is public unless explicitly opted
+in:
+
+- [`external-dns/`](kubernetes/core/services/external-dns/) → Cloudflare.
+  Only Ingresses annotated `homelab.io/dns: public` get a record here
+  (currently just ArgoCD, for its GitHub webhook). Everything else is
+  invisible from the public internet, full stop.
+- [`external-dns-internal/`](kubernetes/core/services/external-dns-internal/)
+  → UniFi's own local DNS, via the
+  [UniFi webhook provider](https://github.com/home-operations/external-dns-unifi-webhook).
+  No filter — every Ingress gets a record here, resolvable only on the LAN
+  or over the UniFi VPN. This is also why ArgoCD resolves to the private
+  LB IP directly for LAN/VPN clients instead of round-tripping through
+  Cloudflare once it's genuinely public later.
+
+Needs a UniFi API key (Settings → Control Plane → Integrations → Create
+API Key — Super Admin only to create it, can downgrade after) in
+[`external-dns-internal/unifi-api-key.sops.yaml`](kubernetes/core/services/external-dns-internal/unifi-api-key.sops.yaml).
 
 ## Repo layout
 

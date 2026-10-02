@@ -1,0 +1,13 @@
+# PLACEHOLDER — fill in the real key, then encrypt in place:
+#   sops -e -i kubernetes/core/services/external-dns-internal/unifi-api-key.sops.yaml
+#
+# Generate in the UniFi console: Settings -> Control Plane -> Integrations
+# -> Create API Key. Only Super Admins can CREATE a key — you can downgrade
+# the account afterward if you made a dedicated one for this.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: unifi-dns-secret
+  namespace: external-dns-internal
+stringData:
+  UNIFI_API_KEY: CHANGEME

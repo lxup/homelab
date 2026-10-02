@@ -1,0 +1,25 @@
+# Second external-dns instance, same Ingresses as the Cloudflare one
+# (kubernetes/core/services/external-dns/) but writing into UniFi's own
+# local DNS instead — so LAN/VPN clients resolve straight to the private
+# LB IP without ever touching Cloudflare, and internal-only hosts
+# (Grafana, Hubble) don't need a public DNS record at all.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns-internal
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/core/services/external-dns-internal
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns-internal
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
