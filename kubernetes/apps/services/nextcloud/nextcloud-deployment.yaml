@@ -8,14 +8,13 @@
 # used, so this one must not write to shared files yet. Flip to false
 # only at final cutover, same moment the old instance gets stopped.
 #
-# replicas: 0 until the initial DB copy (pg_dump from the NAS) has landed
-# in the new postgres — see cli/README or run it manually first.
+# DB copied from the NAS via pg_dump/pg_restore (136 tables, clean).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nextcloud
 spec:
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
