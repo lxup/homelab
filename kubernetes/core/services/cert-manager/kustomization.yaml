@@ -4,6 +4,9 @@ kind: Kustomization
 resources:
   - cluster-issuer.yaml
 
+generators:
+  - ksops-generator.yaml
+
 helmCharts:
   - name: cert-manager
     repo: https://charts.jetstack.io
