@@ -9,7 +9,7 @@ metadata:
   name: r2-backup-daily
   namespace: longhorn-system
 spec:
-  cron: "0 3 * * *" # 03:00 daily — quiet hours
+  cron: "43 22 * * *" # TEMP: testing immediate run, reverting to 03:00 right after
   task: backup
   groups:
     - r2-backup
