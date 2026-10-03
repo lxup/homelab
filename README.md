@@ -108,6 +108,23 @@ migrated into the cluster yet: `jellyfin.nvlab.fr` (:8096), `media.nvlab.fr`
 is off-cluster. Adding a new one means a new file there plus adding the
 hostname to the DDNS updater's `DOMAINS`.
 
+### Immich
+
+[`kubernetes/apps/services/immich/`](kubernetes/apps/services/immich/) —
+photo/video backup from phones, fully in-cluster (no NAS passthrough).
+Own Postgres (the `ghcr.io/immich-app/postgres` image — bundles the
+VectorChord extension Immich needs for face/CLIP similarity search, a
+plain `postgres` image won't work) and own Valkey, same one-per-app
+isolation as Nextcloud/Vaultwarden. The photo/video library itself lives
+on NFS (`/mnt/user/immich` — **create this share on the Unraid NAS
+before deploying**, same reasoning as Nextcloud: bulk media doesn't
+belong on replicated block storage). Machine learning
+(`immich-machine-learning`, `-openvino` image variant) requests the Intel
+iGPU (`gpu.intel.com/i915`, via `intel-gpu-plugin`) for face/object
+detection, the same hardware already used for Jellyfin/Plex Quick Sync.
+Public at `immich.nvlab.fr`, unproxied (original-quality mobile uploads
+can exceed Cloudflare's 100MB proxied-request cap, same as Nextcloud).
+
 ## Repo layout
 
 ```

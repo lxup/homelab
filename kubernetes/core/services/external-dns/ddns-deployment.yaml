@@ -18,10 +18,11 @@
 #   bitwarden. Low-bandwidth hosts, so Cloudflare's WAF/DDoS protection and
 #   hidden origin IP are worth it.
 # - cloudflare-ddns (PROXIED=false): cloud (Nextcloud), jellyfin, media
-#   (Plex). Cloudflare's proxy enforces a hard 100MB request/upload cap on
-#   these plans, which would break Nextcloud uploads, and separately,
-#   proxying sustained video streaming goes against Cloudflare's ToS for
-#   free/Pro plans — not worth the trade-off for these three.
+#   (Plex), immich. Cloudflare's proxy enforces a hard 100MB request/upload
+#   cap on these plans, which would break Nextcloud/Immich uploads (original-
+#   quality photo/video from the mobile app), and separately, proxying
+#   sustained video streaming goes against Cloudflare's ToS for free/Pro
+#   plans — not worth the trade-off for these four.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -46,7 +47,7 @@ spec:
                   name: cloudflare-api-token
                   key: api-token
             - name: DOMAINS
-              value: cloud.nvlab.fr,jellyfin.nvlab.fr,media.nvlab.fr
+              value: cloud.nvlab.fr,jellyfin.nvlab.fr,media.nvlab.fr,immich.nvlab.fr
             - name: PROXIED
               value: "false"
             - name: IP6_PROVIDER

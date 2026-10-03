@@ -1,0 +1,28 @@
+# Public via the UDM Pro's 80/443 port-forward to Traefik's LB IP — the
+# Cloudflare A record for immich.nvlab.fr is kept pointed at the home WAN
+# IP by the DDNS updater (kubernetes/core/services/external-dns/),
+# unproxied group: original-quality photo/video uploads from the mobile
+# app can be well over Cloudflare's 100MB proxied-request cap.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: immich
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - immich.nvlab.fr
+      secretName: immich-tls
+  rules:
+    - host: immich.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: immich-server
+                port:
+                  number: 2283
