@@ -1,15 +1,10 @@
-# Temporary test hostname — jellyfin.nvlab.fr still points at the old NAS
-# instance (kubernetes/apps/services/nas-passthrough/jellyfin.yaml) until
-# this is verified (GPU transcoding, migrated library/users all correct).
-# LAN-only: external-dns-internal has no annotation filter so this
-# resolves automatically on the LAN, but it's deliberately NOT in the
-# DDNS updater's DOMAINS list, so it gets no public Cloudflare record.
-#
-# Cutover (once verified): delete nas-passthrough/jellyfin.yaml, change
-# the host below to jellyfin.nvlab.fr, add jellyfin.nvlab.fr to
-# cloudflare-ddns's DOMAINS (kubernetes/core/services/external-dns/
-# ddns-deployment.yaml) — it's already unproxied-group reasoning (video
-# streaming), and stop the old Jellyfin container on Unraid.
+# Public via the UDM Pro's 80/443 port-forward to Traefik's LB IP — the
+# Cloudflare A record for jellyfin.nvlab.fr is kept pointed at the home
+# WAN IP by the DDNS updater (kubernetes/core/services/external-dns/),
+# unproxied group (video streaming, same reasoning as Nextcloud/Immich).
+# Cut over from the old NAS instance after verifying migrated
+# config/libraries and GPU transcoding worked on the temporary
+# jellyfin-new.nvlab.fr hostname.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -20,10 +15,10 @@ spec:
   ingressClassName: traefik
   tls:
     - hosts:
-        - jellyfin-new.nvlab.fr
+        - jellyfin.nvlab.fr
       secretName: jellyfin-tls
   rules:
-    - host: jellyfin-new.nvlab.fr
+    - host: jellyfin.nvlab.fr
       http:
         paths:
           - path: /
