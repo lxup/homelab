@@ -1,0 +1,60 @@
+# The one place to add/remove a monitored service — no UI, no clicking.
+# Token/chat-id/password are substituted from env vars at container start
+# (Gatus supports ${VAR} interpolation natively) — sourced from the
+# gatus-telegram and db-credentials Secrets.
+storage:
+  type: postgres
+  path: "postgres://gatus:${POSTGRES_PASSWORD}@postgres:5432/gatus?sslmode=disable"
+
+alerting:
+  telegram:
+    token: "${TELEGRAM_BOT_TOKEN}"
+    id: "${TELEGRAM_CHAT_ID}"
+
+endpoints:
+  - name: Jellyfin
+    url: "https://jellyfin.nvlab.fr/health"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+        send-on-resolved: true
+
+  - name: Nextcloud
+    url: "https://cloud.nvlab.fr/status.php"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].installed == true"
+      - "[BODY].maintenance == false"
+    alerts:
+      - type: telegram
+        send-on-resolved: true
+
+  - name: Immich
+    url: "https://immich.nvlab.fr/api/server/ping"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+        send-on-resolved: true
+
+  - name: ArgoCD
+    url: "https://argocd.nvlab.fr/healthz"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+        send-on-resolved: true
+
+  - name: Vaultwarden
+    url: "https://bitwarden.nvlab.fr/alive"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+        send-on-resolved: true

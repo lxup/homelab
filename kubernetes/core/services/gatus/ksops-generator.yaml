@@ -1,0 +1,11 @@
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: gatus-secrets-generator
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ksops
+files:
+  - ./telegram-secret.sops.yaml
+  - ./db-credentials.sops.yaml

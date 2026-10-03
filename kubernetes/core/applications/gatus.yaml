@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: uptime-kuma
+  name: gatus
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/lxup/homelab.git
     targetRevision: main
-    path: kubernetes/core/services/uptime-kuma
+    path: kubernetes/core/services/gatus
   destination:
     server: https://kubernetes.default.svc
-    namespace: uptime-kuma
+    namespace: gatus
   syncPolicy:
     automated:
       prune: true

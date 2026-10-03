@@ -217,7 +217,7 @@ Everything in git stays encrypted; only the cluster can decrypt it.
 | Grafana | `grafana.nvlab.fr` | credentials in `kubernetes/core/services/monitoring/grafana-admin.sops.yaml` (sops-encrypted) |
 | Hubble UI | `hubble.nvlab.fr` | none — read-only network flow map |
 | Longhorn UI | not exposed via Ingress yet — `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80` | none |
-| Uptime Kuma | `uptime.nvlab.fr` (LAN-only, not public) | set on first visit |
+| Gatus | `status.nvlab.fr` (LAN-only, not public) | none — read-only status page |
 
 Grafana ships with the default kube-prometheus-stack dashboards (node
 resource usage, pod resource usage, cluster capacity) plus two more added
@@ -240,31 +240,34 @@ chart's own default dashboards use.
 `kubectl top nodes` / `kubectl top pods` work immediately too
 (metrics-server).
 
-### Uptime Kuma (synthetic / blackbox monitoring)
+### Gatus (synthetic / blackbox monitoring)
 
-[`kubernetes/core/services/uptime-kuma/`](kubernetes/core/services/uptime-kuma/) —
+[`kubernetes/core/services/gatus/`](kubernetes/core/services/gatus/) —
 deliberately separate from Grafana/Prometheus: those watch pod-level
 health (is the container Running/Ready), which misses failures *outside*
 the pod entirely — a stale NFS mount or a bad DNS record can leave a pod
 perfectly "Ready" while the app is actually down for every real user.
-Uptime Kuma instead checks the real public hostname end-to-end (DNS →
-internet → Traefik → app), the same path an actual visitor takes.
+Gatus instead checks the real public hostname end-to-end (DNS → internet →
+Traefik → app), the same path an actual visitor takes.
 
-Not GitOps-managed beyond the deployment itself: monitors and
-notification channels live in Kuma's own SQLite db, configured through
-its UI (there's no sensible static-config format for this), which is why
-the PVC is R2-backed — losing it means re-entering every monitor by hand.
+Fully GitOps, unlike most uptime-monitoring tools (Uptime Kuma included) —
+[`config.yaml`](kubernetes/core/services/gatus/config.yaml) declares every
+monitored endpoint *and* the Telegram alerting config as plain YAML, no
+UI setup at all. Add a service by adding an entry to `endpoints:` and
+committing. Its own Postgres (R2-backed) persists history across
+restarts, same per-app isolation as Nextcloud/Immich.
 
-First-time setup (manual, one-time):
-1. Visit `uptime.nvlab.fr`, create the admin account.
-2. Telegram notifications: message [@BotFather](https://t.me/BotFather) →
-   `/newbot` → copy the bot token. Message your new bot once (anything),
-   then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and read
-   your `chat.id` from the JSON. Enter both in Kuma's
-   Settings → Notifications → Telegram.
-3. Add one HTTP(s) monitor per public hostname (`jellyfin.nvlab.fr`,
-   `cloud.nvlab.fr`, `immich.nvlab.fr`, `argocd.nvlab.fr`,
-   `bitwarden.nvlab.fr`), attach the Telegram notification to each.
+The only manual, one-time step — creating the Telegram bot itself, since
+that's an action on Telegram's side, not Gatus's:
+1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → copy the
+   bot token.
+2. Message your new bot once (anything), then open
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` and read your
+   `chat.id` from the JSON.
+3. Put both in
+   [`telegram-secret.sops.yaml`](kubernetes/core/services/gatus/telegram-secret.sops.yaml)
+   (`sops -e -i` it) — `config.yaml` references them via
+   `${TELEGRAM_BOT_TOKEN}` / `${TELEGRAM_CHAT_ID}`.
 
 ## What's deliberately not GitOps-managed
 
