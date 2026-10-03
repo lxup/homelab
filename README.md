@@ -69,22 +69,22 @@ halves of the split-horizon use genuinely different mechanisms:
 - **Public** — [`external-dns/`](kubernetes/core/services/external-dns/)
   (repurposed; still the name/namespace/secret, see the comment in
   `ddns-deployment.yaml`) runs **two** Cloudflare DDNS updater instances
-  ([favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns)),
-  because Cloudflare's proxy (orange cloud) is an all-or-nothing setting
-  per instance but needs to differ per host:
-  - `cloudflare-ddns` — `argocd.nvlab.fr`, `cloud.nvlab.fr`,
-    `jellyfin.nvlab.fr`, `media.nvlab.fr`, each its own direct A record,
-    unproxied (grey cloud, `PROXIED=false`). Cloudflare's proxy caps
-    uploads at 100MB on these plans, which would break Nextcloud and hurt
-    Jellyfin/Plex streaming.
-  - `cloudflare-ddns-proxied` — just the zone apex (`nvlab.fr`), proxied
-    (orange cloud, `PROXIED=true`). `bitwarden.nvlab.fr` and
-    `wiki.nvlab.fr` are CNAMEs to the apex (pre-existing, low-bandwidth —
-    worth keeping Cloudflare's WAF in front) and ride along for free; this
-    instance just keeps the apex itself fresh, independent of whatever
-    used to do that on the old NAS.
+  ([favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns)).
+  Every public hostname gets its own independent, direct A record (no
+  CNAMEs) — grouped into one of two instances because Cloudflare's proxy
+  (orange cloud) is an all-or-nothing setting per instance, and we want it
+  to differ per host:
+  - `cloudflare-ddns-proxied` (`PROXIED=true`) — `nvlab.fr` (the zone
+    apex), `argocd.nvlab.fr`, `bitwarden.nvlab.fr`, `wiki.nvlab.fr`.
+    Low-bandwidth hosts, so Cloudflare's WAF/DDoS protection and hidden
+    origin IP are worth it.
+  - `cloudflare-ddns` (`PROXIED=false`) — `cloud.nvlab.fr` (Nextcloud),
+    `jellyfin.nvlab.fr`, `media.nvlab.fr` (Plex). Cloudflare's proxy caps
+    uploads at 100MB on these plans (would break Nextcloud uploads), and
+    separately, sustained video streaming through the proxy runs against
+    Cloudflare's ToS on free/Pro plans — not worth the trade-off here.
   Nothing is public unless its hostname is in one of these two `DOMAINS`
-  lists (or CNAMEs to the apex) — adding one is a one-line git change.
+  lists — adding one is a one-line git change.
 - **Internal** — [`external-dns-internal/`](kubernetes/core/services/external-dns-internal/)
   → UniFi's own local DNS, via the
   [UniFi webhook provider](https://github.com/home-operations/external-dns-unifi-webhook).
