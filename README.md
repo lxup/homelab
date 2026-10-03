@@ -121,9 +121,24 @@ before deploying**, same reasoning as Nextcloud: bulk media doesn't
 belong on replicated block storage). Machine learning
 (`immich-machine-learning`, `-openvino` image variant) requests the Intel
 iGPU (`gpu.intel.com/i915`, via `intel-gpu-plugin`) for face/object
-detection, the same hardware already used for Jellyfin/Plex Quick Sync.
+detection — confirmed actually using it (OpenVINOExecutionProvider, not
+just CPU fallback) by checking its logs and `/dev/dri` after deploy.
 Public at `immich.nvlab.fr`, unproxied (original-quality mobile uploads
 can exceed Cloudflare's 100MB proxied-request cap, same as Nextcloud).
+
+### Jellyfin
+
+[`kubernetes/apps/services/jellyfin/`](kubernetes/apps/services/jellyfin/) —
+migrating in from the Unraid NAS (config currently copied over once via a
+one-off Job, not shared live with the old instance — same reasoning as
+every other migration here: SQLite over a live NFS share accessed by two
+instances risks corruption). Media library stays on NFS
+(`/mnt/user/media`), read-only. Requests the same Intel iGPU as Immich's
+ML service for hardware transcoding (Quick Sync). Currently live at the
+temporary `jellyfin-new.nvlab.fr` (LAN-only) for verification before
+cutover — see the comment in `ingress.yaml` for the exact cutover steps
+(repoint the real `jellyfin.nvlab.fr`, remove the NAS passthrough entry,
+stop the old container).
 
 ## Repo layout
 

@@ -1,0 +1,66 @@
+# /media mounted read-only at the path Jellyfin's migrated library.db
+# expects. If the old Unraid container mapped the media share to a
+# different internal path, libraries will show as broken on first boot —
+# harmless, one-time fix in Settings > Libraries to re-point them (no data
+# loss, the scan metadata is still there).
+#
+# gpu.intel.com/i915 requests the same iGPU already used by Immich's ML
+# service (kubernetes/apps/services/immich/ml-deployment.yaml) — 3 nodes,
+# 1 unit each, so this just needs to land on a different node than
+# whichever one Immich's ML pod is on, which the scheduler handles on its
+# own.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jellyfin
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single ReadWriteOnce volumes (config, cache)
+  selector:
+    matchLabels:
+      app: jellyfin
+  template:
+    metadata:
+      labels:
+        app: jellyfin
+    spec:
+      containers:
+        - name: jellyfin
+          image: jellyfin/jellyfin:12.1
+          ports:
+            - containerPort: 8096
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: cache
+              mountPath: /cache
+            - name: media
+              mountPath: /media
+              readOnly: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              gpu.intel.com/i915: 1
+            limits:
+              cpu: 4
+              memory: 4Gi
+              gpu.intel.com/i915: 1
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8096
+            initialDelaySeconds: 15
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: jellyfin-config
+        - name: cache
+          persistentVolumeClaim:
+            claimName: jellyfin-cache
+        - name: media
+          nfs:
+            server: 10.10.10.101
+            path: /mnt/user/media
+            readOnly: true

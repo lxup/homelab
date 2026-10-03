@@ -1,0 +1,35 @@
+# Temporary test hostname — jellyfin.nvlab.fr still points at the old NAS
+# instance (kubernetes/apps/services/nas-passthrough/jellyfin.yaml) until
+# this is verified (GPU transcoding, migrated library/users all correct).
+# LAN-only: external-dns-internal has no annotation filter so this
+# resolves automatically on the LAN, but it's deliberately NOT in the
+# DDNS updater's DOMAINS list, so it gets no public Cloudflare record.
+#
+# Cutover (once verified): delete nas-passthrough/jellyfin.yaml, change
+# the host below to jellyfin.nvlab.fr, add jellyfin.nvlab.fr to
+# cloudflare-ddns's DOMAINS (kubernetes/core/services/external-dns/
+# ddns-deployment.yaml) — it's already unproxied-group reasoning (video
+# streaming), and stop the old Jellyfin container on Unraid.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jellyfin
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - jellyfin-new.nvlab.fr
+      secretName: jellyfin-tls
+  rules:
+    - host: jellyfin-new.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: jellyfin
+                port:
+                  number: 8096
