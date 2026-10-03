@@ -16,3 +16,13 @@ ports:
 ingressClass:
   enabled: true
   isDefaultClass: true
+
+# Traefik refuses to route to ExternalName Services by default since
+# v2.4.10 (hardening against a Kubernetes CVE) — needed for
+# nas-passthrough/media.yaml (Plex, still NAS-hosted), which backs its
+# Ingress with an ExternalName Service pointing at the NAS's IP. Without
+# this, Traefik silently has no router for that host at all (generic
+# "404 page not found", easy to mistake for a backend problem).
+providers:
+  kubernetesIngress:
+    allowExternalNameServices: true
