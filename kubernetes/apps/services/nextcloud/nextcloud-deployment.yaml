@@ -1,16 +1,12 @@
-# Starts at :25-apache to match the migrated database exactly (Nextcloud
-# refuses to skip major versions) — climbs 25 -> 35 one image-tag bump at
-# a time, each one let to run its own `occ upgrade` before moving to the
-# next. See README for the climb log.
+# Migrated from the NAS: DB via pg_dump/pg_restore (136 tables), then
+# climbed 25 -> 35 one image-tag bump at a time since Nextcloud refuses to
+# skip major versions (each bump ran its own `occ upgrade` first — see
+# README git history for the climb log). Cutover is complete, old NAS
+# instance decommissioned.
 #
-# data volume is read-write against the SAME NFS share the old NAS
-# instance still uses — occ requires write access to /data even just to
-# run `occ status` (log file, writability checks), so this can't be
-# deferred to final cutover like the DB copy was. Avoid using the old
-# instance while this climb is in progress to prevent both writing
-# concurrently; final cutover = stop the old instance for good + DNS flip.
-#
-# DB copied from the NAS via pg_dump/pg_restore (136 tables, clean).
+# data volume is read-write — occ needs write access to /data even for
+# read-only-seeming commands like `occ status` (log file, writability
+# checks).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

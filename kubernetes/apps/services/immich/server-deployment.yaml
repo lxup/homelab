@@ -1,8 +1,7 @@
 # /data is the actual photo/video library (NFS, same Unraid NAS as
 # Nextcloud, separate share so it can have its own cache/backup settings
 # later if needed) — not Longhorn, same reasoning as Nextcloud: bulk media
-# belongs on the NAS, not replicated block storage. Create the
-# `/mnt/user/immich` share on Unraid before this will mount successfully.
+# belongs on the NAS, not replicated block storage.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

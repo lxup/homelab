@@ -1,5 +1,5 @@
 # App-of-apps root. Applied once, imperatively, by cli/
-# (src/steps/11-apply-root-app.js) — from then on ArgoCD watches this path
+# (src/steps/12-apply-root-app.ts) — from then on ArgoCD watches this path
 # itself and every file added under applications/ becomes a new Application,
 # no further manual kubectl apply needed.
 apiVersion: argoproj.io/v1alpha1
