@@ -1,8 +1,6 @@
-# /media mounted read-only at the path Jellyfin's migrated library.db
-# expects. If the old Unraid container mapped the media share to a
-# different internal path, libraries will show as broken on first boot —
-# harmless, one-time fix in Settings > Libraries to re-point them (no data
-# loss, the scan metadata is still there).
+# /media mounted read-only at /media, matching what the migrated
+# library.db already expects (confirmed on first boot — libraries
+# auto-discovered correctly, no re-pathing needed).
 #
 # gpu.intel.com/i915 requests the same iGPU already used by Immich's ML
 # service (kubernetes/apps/services/immich/ml-deployment.yaml) — 3 nodes,

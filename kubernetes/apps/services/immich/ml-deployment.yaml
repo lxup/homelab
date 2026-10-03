@@ -5,10 +5,9 @@
 # assumes by default (http://immich-machine-learning:3003) — no extra
 # config needed on the server side to find this.
 #
-# If the GPU isn't picked up (check logs for "No OpenVINO device found" or
-# similar), the container likely can't access /dev/dri — the device
-# plugin grants the device node, but render-node group permissions can
-# still need a supplementalGroups entry matching the host's `render` GID.
+# Confirmed actually using the GPU after deploy: /dev/dri present in the
+# pod (render-node device is world-writable, no supplementalGroups
+# needed) and logs show OpenVINOExecutionProvider ahead of CPU fallback.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

@@ -1,5 +1,9 @@
-# ExternalName with a literal IP — see jellyfin.yaml for why (not a
-# selector-less Service + manual Endpoints, which ArgoCD silently drops).
+# ExternalName with a literal IP, not a selector-less Service + manual
+# Endpoints: ArgoCD excludes Endpoints/EndpointSlice from management by
+# default (resource.exclusions in argocd-cm), so a manually committed
+# Endpoints object is silently never applied. Traefik resolves
+# ExternalName services itself at the provider level (not through
+# kube-dns), so a raw IP here works fine as the backend.
 #
 # Plex (port 32400). After this is live, set "Custom server access URLs"
 # to https://media.nvlab.fr:443 in Plex's Network settings — otherwise
