@@ -12,6 +12,7 @@ APPS = [
     ("Immich", "immich", "📸"),
     ("Jellyfin", "jellyfin", "🎬"),
     ("Paperless", "paperless", "📄"),
+    ("Syncthing", "syncthing", "🔁"),
     ("Gatus", "gatus", "🚦"),
     ("Longhorn", "longhorn-system", "💾"),
     ("cert-manager", "cert-manager", "🔏"),

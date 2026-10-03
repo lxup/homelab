@@ -1,0 +1,26 @@
+# Own LoadBalancer IP (from the same Cilium pool Traefik uses) rather than
+# going through Traefik — sync traffic isn't HTTP, Traefik can't route it.
+# Reachable on the LAN as-is; if remote direct sync (away from home, not
+# just via Syncthing's public relay fallback) ever matters, forward 22000
+# tcp+udp on the UDM Pro to this IP too.
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing-sync
+spec:
+  type: LoadBalancer
+  selector:
+    app: syncthing
+  ports:
+    - name: sync-tcp
+      port: 22000
+      targetPort: 22000
+      protocol: TCP
+    - name: sync-udp
+      port: 22000
+      targetPort: 22000
+      protocol: UDP
+    - name: discovery
+      port: 21027
+      targetPort: 21027
+      protocol: UDP
