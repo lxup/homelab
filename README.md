@@ -219,9 +219,25 @@ Everything in git stays encrypted; only the cluster can decrypt it.
 | Longhorn UI | not exposed via Ingress yet — `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80` | none |
 
 Grafana ships with the default kube-prometheus-stack dashboards (node
-resource usage, pod resource usage, cluster capacity) already imported —
-nothing to configure after first login. `kubectl top nodes` / `kubectl top
-pods` work immediately too (metrics-server).
+resource usage, pod resource usage, cluster capacity) plus two more added
+as code in [`kubernetes/core/services/monitoring/dashboards/`](kubernetes/core/services/monitoring/dashboards/) —
+nothing to configure after first login, no manual import, survives a full
+reinstall:
+
+- **Node Exporter Full** (community dashboard 1860) — the detailed
+  per-node view: CPU/RAM/disk I/O/network/temperature.
+- **Homelab Apps** (custom) — one row per app (emoji as the "icon",
+  CPU/memory/network/restarts per pod), plus a cluster-summary row at the
+  top. Add a new app by adding an entry to the `APPS` list in
+  [`generate-homelab-apps.py`](kubernetes/core/services/monitoring/dashboards/generate-homelab-apps.py)
+  and re-running it (regenerates `homelab-apps.json` in place).
+
+Both are plain ConfigMaps labeled `grafana_dashboard: "1"` — the chart's
+Grafana sidecar auto-discovers and loads them, same mechanism the
+chart's own default dashboards use.
+
+`kubectl top nodes` / `kubectl top pods` work immediately too
+(metrics-server).
 
 ## What's deliberately not GitOps-managed
 
