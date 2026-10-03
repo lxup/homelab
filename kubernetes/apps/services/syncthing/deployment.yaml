@@ -9,9 +9,7 @@ kind: Deployment
 metadata:
   name: syncthing
 spec:
-  # Temporarily 0 to fix root-owned config.xml left by the earlier
-  # root-running init container — revert to 1 right after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume
   selector:
