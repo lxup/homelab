@@ -30,9 +30,19 @@ spec:
       # internally (a nested subdir), confirmed by exec'ing into the
       # running container. Using the mount root here silently writes to an
       # unused parallel config the server never reads.
+      #
+      # runAsUser/runAsGroup: 1000 on the init container specifically —
+      # overriding `command:` bypasses the image's own entrypoint (which
+      # normally drops from root to 1000 per PUID/PGID), so without this
+      # the generate command runs as root and leaves config.xml owned by
+      # root, which the main container (correctly running as 1000) then
+      # can't read ("permission denied" on startup).
       initContainers:
         - name: set-gui-credentials
           image: syncthing/syncthing:2.1.5
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
           command:
             - syncthing
             - generate
