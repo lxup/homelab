@@ -63,7 +63,7 @@ endpoints:
     url: "https://paperless.nvlab.fr/"
     interval: 1m
     conditions:
-      - "[STATUS] == 302"
+      - "[STATUS] == 200"
     alerts:
       - type: telegram
         send-on-resolved: true
