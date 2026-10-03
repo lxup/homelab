@@ -103,10 +103,10 @@ NAS IP, plus an Ingress — not a selector-less Service with a manually
 committed `Endpoints`, which ArgoCD silently never applies: `Endpoints`/
 `EndpointSlice` are excluded from management by its default
 `resource.exclusions`) for public hostnames whose backend hasn't been
-migrated into the cluster yet: `jellyfin.nvlab.fr` (:8096), `media.nvlab.fr`
-/ Plex (:32400). Traefik still terminates TLS for these; only the backend
-is off-cluster. Adding a new one means a new file there plus adding the
-hostname to the DDNS updater's `DOMAINS`.
+migrated into the cluster yet: `media.nvlab.fr` / Plex (:32400). Traefik
+still terminates TLS for these; only the backend is off-cluster. Adding a
+new one means a new file there plus adding the hostname to the DDNS
+updater's `DOMAINS`.
 
 ### Immich
 
@@ -129,16 +129,16 @@ can exceed Cloudflare's 100MB proxied-request cap, same as Nextcloud).
 ### Jellyfin
 
 [`kubernetes/apps/services/jellyfin/`](kubernetes/apps/services/jellyfin/) —
-migrating in from the Unraid NAS (config currently copied over once via a
-one-off Job, not shared live with the old instance — same reasoning as
-every other migration here: SQLite over a live NFS share accessed by two
+migrated in from the Unraid NAS (config copied over once via a one-off
+Job, not shared live with the old instance — same reasoning as every
+other migration here: SQLite over a live NFS share accessed by two
 instances risks corruption). Media library stays on NFS
 (`/mnt/user/media`), read-only. Requests the same Intel iGPU as Immich's
-ML service for hardware transcoding (Quick Sync). Currently live at the
-temporary `jellyfin-new.nvlab.fr` (LAN-only) for verification before
-cutover — see the comment in `ingress.yaml` for the exact cutover steps
-(repoint the real `jellyfin.nvlab.fr`, remove the NAS passthrough entry,
-stop the old container).
+ML service for hardware transcoding (Quick Sync). Verified on a temporary
+`jellyfin-new.nvlab.fr` hostname first (migrated library/users intact, GPU
+transcoding), now cut over to the real `jellyfin.nvlab.fr` — the NAS
+passthrough entry for it is gone, **remember to stop the old Jellyfin
+container on Unraid**.
 
 ## Repo layout
 
