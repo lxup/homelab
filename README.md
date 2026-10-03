@@ -217,6 +217,7 @@ Everything in git stays encrypted; only the cluster can decrypt it.
 | Grafana | `grafana.nvlab.fr` | credentials in `kubernetes/core/services/monitoring/grafana-admin.sops.yaml` (sops-encrypted) |
 | Hubble UI | `hubble.nvlab.fr` | none — read-only network flow map |
 | Longhorn UI | not exposed via Ingress yet — `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80` | none |
+| Uptime Kuma | `uptime.nvlab.fr` (LAN-only, not public) | set on first visit |
 
 Grafana ships with the default kube-prometheus-stack dashboards (node
 resource usage, pod resource usage, cluster capacity) plus two more added
@@ -238,6 +239,32 @@ chart's own default dashboards use.
 
 `kubectl top nodes` / `kubectl top pods` work immediately too
 (metrics-server).
+
+### Uptime Kuma (synthetic / blackbox monitoring)
+
+[`kubernetes/core/services/uptime-kuma/`](kubernetes/core/services/uptime-kuma/) —
+deliberately separate from Grafana/Prometheus: those watch pod-level
+health (is the container Running/Ready), which misses failures *outside*
+the pod entirely — a stale NFS mount or a bad DNS record can leave a pod
+perfectly "Ready" while the app is actually down for every real user.
+Uptime Kuma instead checks the real public hostname end-to-end (DNS →
+internet → Traefik → app), the same path an actual visitor takes.
+
+Not GitOps-managed beyond the deployment itself: monitors and
+notification channels live in Kuma's own SQLite db, configured through
+its UI (there's no sensible static-config format for this), which is why
+the PVC is R2-backed — losing it means re-entering every monitor by hand.
+
+First-time setup (manual, one-time):
+1. Visit `uptime.nvlab.fr`, create the admin account.
+2. Telegram notifications: message [@BotFather](https://t.me/BotFather) →
+   `/newbot` → copy the bot token. Message your new bot once (anything),
+   then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and read
+   your `chat.id` from the JSON. Enter both in Kuma's
+   Settings → Notifications → Telegram.
+3. Add one HTTP(s) monitor per public hostname (`jellyfin.nvlab.fr`,
+   `cloud.nvlab.fr`, `immich.nvlab.fr`, `argocd.nvlab.fr`,
+   `bitwarden.nvlab.fr`), attach the Telegram notification to each.
 
 ## What's deliberately not GitOps-managed
 
