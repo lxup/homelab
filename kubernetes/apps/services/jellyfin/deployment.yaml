@@ -14,10 +14,7 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  # Temporarily 0 while the config is migrated from the NAS via a one-off
-  # Job (RWO volume, can't be mounted by two pods/nodes at once) — revert
-  # to 1 right after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
