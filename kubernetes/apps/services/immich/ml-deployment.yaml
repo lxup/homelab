@@ -1,0 +1,46 @@
+# -openvino image variant + the Intel GPU device plugin resource
+# (gpu.intel.com/i915, see kubernetes/core/applications/intel-gpu-plugin.yaml)
+# to run face/CLIP recognition on the same iGPU already in each node.
+# Service name "immich-machine-learning" matches what immich-server
+# assumes by default (http://immich-machine-learning:3003) — no extra
+# config needed on the server side to find this.
+#
+# If the GPU isn't picked up (check logs for "No OpenVINO device found" or
+# similar), the container likely can't access /dev/dri — the device
+# plugin grants the device node, but render-node group permissions can
+# still need a supplementalGroups entry matching the host's `render` GID.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-machine-learning
+  template:
+    metadata:
+      labels:
+        app: immich-machine-learning
+    spec:
+      containers:
+        - name: immich-machine-learning
+          image: ghcr.io/immich-app/immich-machine-learning:v3.2.4-openvino
+          ports:
+            - containerPort: 3003
+          volumeMounts:
+            - name: model-cache
+              mountPath: /cache
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+              gpu.intel.com/i915: 1
+            limits:
+              cpu: 4
+              memory: 4Gi
+              gpu.intel.com/i915: 1
+      volumes:
+        - name: model-cache
+          persistentVolumeClaim:
+            claimName: model-cache

@@ -1,0 +1,57 @@
+# Immich requires this exact image (plain postgres won't do) — it bundles
+# the VectorChord extension used for similarity search on face/CLIP
+# embeddings. Version pinned to match the one in Immich's own reference
+# docker-compose.yml (docker/docker-compose.yml in immich-app/immich).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single ReadWriteOnce volume
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+          envFrom:
+            - secretRef:
+                name: db-credentials
+          env:
+            - name: POSTGRES_INITDB_ARGS
+              value: --data-checksums
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: dshm
+              mountPath: /dev/shm
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 2
+              memory: 2Gi
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "immich"]
+            initialDelaySeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+        # Matches upstream's `shm_size: 128mb` — vectorchord/pgvector index
+        # builds need more /dev/shm than the container's tiny 64Mi default.
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi

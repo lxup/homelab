@@ -1,0 +1,70 @@
+# /data is the actual photo/video library (NFS, same Unraid NAS as
+# Nextcloud, separate share so it can have its own cache/backup settings
+# later if needed) — not Longhorn, same reasoning as Nextcloud: bulk media
+# belongs on the NAS, not replicated block storage. Create the
+# `/mnt/user/immich` share on Unraid before this will mount successfully.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      containers:
+        - name: immich-server
+          image: ghcr.io/immich-app/immich-server:v3.2.4
+          env:
+            - name: DB_HOSTNAME
+              value: postgres
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: DB_DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_DB
+            - name: DB_VECTOR_EXTENSION
+              value: vectorchord
+            - name: REDIS_HOSTNAME
+              value: redis
+            - name: TZ
+              value: Europe/Paris
+          ports:
+            - containerPort: 2283
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 4
+              memory: 4Gi
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: 2283
+            initialDelaySeconds: 15
+      volumes:
+        - name: data
+          nfs:
+            server: 10.10.10.101
+            path: /mnt/user/immich

@@ -1,0 +1,29 @@
+# No PVC — job queue/cache only, losing it on a restart just means queued
+# jobs get re-picked-up, never photo/video data loss. Valkey, not Redis:
+# what Immich's own compose file uses (Redis-compatible fork).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: docker.io/valkey/valkey:9-alpine
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

@@ -1,0 +1,13 @@
+# Downloaded ML models (face/CLIP) — just a cache, re-downloadable, no R2
+# backup needed.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
