@@ -21,7 +21,6 @@ Pure GitOps homelab running on 3 bare-metal nodes, provisioned with
 | Ingress | Traefik |
 | TLS | cert-manager |
 | Block storage | Longhorn (local NVMe, replicated across all 3 nodes) |
-| File storage | `nfs-subdir-external-provisioner` → Unraid NAS |
 | GPU passthrough | Intel Device Plugin (`gpu.intel.com/i915`), for Plex/Jellyfin Quick Sync transcoding |
 | DNS | Split-horizon: Cloudflare DDNS updater (public hostnames → home WAN IP) + external-dns → UniFi local DNS (everything, LAN/VPN-only) |
 | Public exposure | UDM Pro port-forwards 80/443 straight to Traefik's LB IP — no Cloudflare Tunnel |
@@ -185,13 +184,11 @@ More sections (upgrades, node maintenance, …) land here over time.
    [Network](#network) above.
 2. Check [`talos/talconfig.yaml`](talos/talconfig.yaml) matches your real
    node MACs/hostnames (IPs already match the Network section).
-3. Edit [`kubernetes/core/services/nfs-provisioner/values.yaml`](kubernetes/core/services/nfs-provisioner/values.yaml)
-   with your Unraid NAS's real IP and export path.
-4. Fill in a real Cloudflare API token:
+3. Fill in a real Cloudflare API token:
    [`kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml`](kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml)
    (then `sops -e -i` it) and your domain(s) in the `DOMAINS` env var of
    [`kubernetes/core/services/external-dns/ddns-deployment.yaml`](kubernetes/core/services/external-dns/ddns-deployment.yaml).
-5. The repo URL baked into every `Application`/`root.yaml` is
+4. The repo URL baked into every `Application`/`root.yaml` is
    `https://github.com/lxup/homelab.git` on `main` — update it if you fork
    or rename.
 

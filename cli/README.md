@@ -60,7 +60,7 @@ offers to fix what it can, without fighting GitOps:
 - **Root app-of-apps** — checked as an ArgoCD `Application` named `root`. If
   missing, the fix re-applies `kubernetes/core/root.yaml`.
 - Everything else under `kubernetes/core/applications/` (cert-manager,
-  Traefik, Longhorn, nfs-provisioner, Cilium LB config, Intel GPU plugin) —
+  Traefik, Longhorn, Cilium LB config, Intel GPU plugin) —
   checked as ArgoCD `Application` health/sync status. The fix requests a
   hard refresh; actual reconciliation is still ArgoCD's job
   (`automated: { prune: true, selfHeal: true }` on every Application).
