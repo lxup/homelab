@@ -75,9 +75,8 @@ halves of the split-horizon use genuinely different mechanisms:
   (orange cloud) is an all-or-nothing setting per instance, and we want it
   to differ per host:
   - `cloudflare-ddns-proxied` (`PROXIED=true`) — `nvlab.fr` (the zone
-    apex), `argocd.nvlab.fr`, `bitwarden.nvlab.fr`, `wiki.nvlab.fr`.
-    Low-bandwidth hosts, so Cloudflare's WAF/DDoS protection and hidden
-    origin IP are worth it.
+    apex), `argocd.nvlab.fr`, `bitwarden.nvlab.fr`. Low-bandwidth hosts, so
+    Cloudflare's WAF/DDoS protection and hidden origin IP are worth it.
   - `cloudflare-ddns` (`PROXIED=false`) — `cloud.nvlab.fr` (Nextcloud),
     `jellyfin.nvlab.fr`, `media.nvlab.fr` (Plex). Cloudflare's proxy caps
     uploads at 100MB on these plans (would break Nextcloud uploads), and
@@ -99,12 +98,15 @@ API Key — Super Admin only to create it, can downgrade after) in
 ### Services still hosted on the NAS
 
 [`kubernetes/apps/services/nas-passthrough/`](kubernetes/apps/services/nas-passthrough/)
-is a thin Traefik passthrough (Service+Endpoints pointing at the NAS IP,
-plus an Ingress) for public hostnames whose backend hasn't been migrated
-into the cluster yet: `wiki.nvlab.fr` (:3000), `jellyfin.nvlab.fr`
-(:8096), `media.nvlab.fr` / Plex (:32400). Traefik still terminates TLS
-for these; only the backend is off-cluster. Adding a new one means a new
-file there plus adding the hostname to the DDNS updater's `DOMAINS`.
+is a thin Traefik passthrough (an `ExternalName` Service pointing at the
+NAS IP, plus an Ingress — not a selector-less Service with a manually
+committed `Endpoints`, which ArgoCD silently never applies: `Endpoints`/
+`EndpointSlice` are excluded from management by its default
+`resource.exclusions`) for public hostnames whose backend hasn't been
+migrated into the cluster yet: `jellyfin.nvlab.fr` (:8096), `media.nvlab.fr`
+/ Plex (:32400). Traefik still terminates TLS for these; only the backend
+is off-cluster. Adding a new one means a new file there plus adding the
+hostname to the DDNS updater's `DOMAINS`.
 
 ## Repo layout
 

@@ -15,8 +15,8 @@
 # it for that host:
 #
 # - cloudflare-ddns-proxied (PROXIED=true): nvlab.fr (apex), argocd, and
-#   bitwarden/wiki. Low-bandwidth hosts, so Cloudflare's WAF/DDoS
-#   protection and hidden origin IP are worth it.
+#   bitwarden. Low-bandwidth hosts, so Cloudflare's WAF/DDoS protection and
+#   hidden origin IP are worth it.
 # - cloudflare-ddns (PROXIED=false): cloud (Nextcloud), jellyfin, media
 #   (Plex). Cloudflare's proxy enforces a hard 100MB request/upload cap on
 #   these plans, which would break Nextcloud uploads, and separately,
@@ -91,7 +91,7 @@ spec:
                   name: cloudflare-api-token
                   key: api-token
             - name: DOMAINS
-              value: nvlab.fr,argocd.nvlab.fr,bitwarden.nvlab.fr,wiki.nvlab.fr
+              value: nvlab.fr,argocd.nvlab.fr,bitwarden.nvlab.fr
             - name: PROXIED
               value: "true"
             - name: IP6_PROVIDER
