@@ -14,9 +14,7 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  # Temporarily 0 to fix a stale marker file in the migrated config —
-  # revert to 1 right after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
