@@ -1,0 +1,26 @@
+# LAN-only (same reasoning as Grafana/Hubble): the GUI holds device
+# pairing info, no reason for it to be internet-reachable. Actual sync
+# traffic goes through service-sync.yaml instead, not this Ingress.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: syncthing
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - syncthing.nvlab.fr
+      secretName: syncthing-tls
+  rules:
+    - host: syncthing.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: syncthing-gui
+                port:
+                  number: 8384

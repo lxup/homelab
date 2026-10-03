@@ -1,0 +1,56 @@
+# This instance is a 3rd, always-on peer — not a server. MacBook Pro and
+# the gaming PC each run their own normal Syncthing install; this one just
+# stays online so the two sync even when they're never both awake at the
+# same time. Folders/device pairing are set up once via the GUI (device
+# IDs don't exist until each machine's own Syncthing is installed) —
+# nothing to template in git for that part.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single ReadWriteOnce volume
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      containers:
+        - name: syncthing
+          image: syncthing/syncthing:2.1.5
+          ports:
+            - name: gui
+              containerPort: 8384
+            - name: sync-tcp
+              containerPort: 22000
+              protocol: TCP
+            - name: sync-udp
+              containerPort: 22000
+              protocol: UDP
+            - name: discovery
+              containerPort: 21027
+              protocol: UDP
+          volumeMounts:
+            - name: data
+              mountPath: /var/syncthing
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /rest/noauth/health
+              port: 8384
+            initialDelaySeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: syncthing-data
