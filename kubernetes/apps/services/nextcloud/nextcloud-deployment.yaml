@@ -65,16 +65,16 @@ spec:
               mountPath: /data
           # Bumped after an OOMKill (exit 137) during a desktop client sync
           # burst (lots of concurrent PROPFIND on a deeply nested folder
-          # tree) — 1Gi wasn't enough headroom for Apache+PHP under that
-          # load. Nodes have 15GB allocatable each with 3-5GB in use, so
-          # plenty of room.
+          # tree) — went generous rather than just covering that one case:
+          # each node has 15GB allocatable with only 3-5GB in use
+          # cluster-wide, so there's no reason to ration a single pod.
           resources:
             requests:
-              cpu: 200m
-              memory: 768Mi
-            limits:
-              cpu: 2
+              cpu: 1
               memory: 2Gi
+            limits:
+              cpu: 4
+              memory: 6Gi
       volumes:
         - name: seed
           secret:
