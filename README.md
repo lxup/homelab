@@ -139,6 +139,23 @@ transcoding), now cut over to the real `jellyfin.nvlab.fr` — the NAS
 passthrough entry for it is gone, **remember to stop the old Jellyfin
 container on Unraid**.
 
+### Paperless-ngx
+
+[`kubernetes/apps/services/paperless/`](kubernetes/apps/services/paperless/) —
+document management (invoices, health records, admin paperwork), scanned
+or uploaded as PDF/images, OCR'd and full-text searchable. Own Postgres +
+Valkey, same per-app isolation as the other apps. Documents/thumbnails on
+NFS (`/mnt/user/paperless`); the search index and classification model
+stay on Longhorn (small, rebuildable from the documents if ever lost). No
+watched "consume" folder yet — upload via the web UI covers the stated
+use case; add one later (a second NFS mount + `PAPERLESS_CONSUMPTION_DIR`)
+if a physical scanner ever needs a drop folder.
+
+Public at `paperless.nvlab.fr`, unproxied (large scan uploads can exceed
+Cloudflare's 100MB proxied-request cap, same as Nextcloud/Immich) — a
+deliberate choice despite the sensitive content, same exposure model as
+Nextcloud.
+
 ## Repo layout
 
 ```

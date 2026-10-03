@@ -1,0 +1,92 @@
+# /usr/src/paperless/media (documents + thumbnails) is NFS, same NAS as
+# Nextcloud/Immich, own dedicated share — not Longhorn, same reasoning as
+# everywhere else: bulk file storage belongs on the NAS. /data (search
+# index, classification model) stays on Longhorn — small, fast, and
+# rebuildable from the documents if ever lost.
+#
+# No consume-folder (watched directory for scanner "scan to folder"
+# workflows) for now — upload via the web UI covers the stated use case.
+# Add one later: a second NFS mount at /usr/src/paperless/consume plus
+# PAPERLESS_CONSUMPTION_DIR, once that subfolder exists on the share.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paperless
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single ReadWriteOnce volume (paperless-data)
+  selector:
+    matchLabels:
+      app: paperless
+  template:
+    metadata:
+      labels:
+        app: paperless
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: paperless
+          image: ghcr.io/paperless-ngx/paperless-ngx:v3.2.1
+          env:
+            - name: PAPERLESS_URL
+              value: https://paperless.nvlab.fr
+            - name: PAPERLESS_TIME_ZONE
+              value: Europe/Paris
+            - name: PAPERLESS_OCR_LANGUAGE
+              value: fra
+            - name: PAPERLESS_REDIS
+              value: redis://redis:6379
+            - name: PAPERLESS_DBENGINE
+              value: postgresql
+            - name: PAPERLESS_DBHOST
+              value: postgres
+            - name: PAPERLESS_DBPORT
+              value: "5432"
+            - name: PAPERLESS_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_DB
+            - name: PAPERLESS_DBUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_USER
+            - name: PAPERLESS_DBPASS
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: PAPERLESS_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: PAPERLESS_SECRET_KEY
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: data
+              mountPath: /usr/src/paperless/data
+            - name: media
+              mountPath: /usr/src/paperless/media
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2
+              memory: 2Gi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 20
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: paperless-data
+        - name: media
+          nfs:
+            server: 10.10.10.101
+            path: /mnt/user/paperless
