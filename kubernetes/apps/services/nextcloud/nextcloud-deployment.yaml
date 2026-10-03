@@ -63,13 +63,18 @@ spec:
               mountPath: /var/www/html/custom_apps
             - name: data
               mountPath: /data
+          # Bumped after an OOMKill (exit 137) during a desktop client sync
+          # burst (lots of concurrent PROPFIND on a deeply nested folder
+          # tree) — 1Gi wasn't enough headroom for Apache+PHP under that
+          # load. Nodes have 15GB allocatable each with 3-5GB in use, so
+          # plenty of room.
           resources:
             requests:
               cpu: 200m
-              memory: 512Mi
+              memory: 768Mi
             limits:
               cpu: 2
-              memory: 1Gi
+              memory: 2Gi
       volumes:
         - name: seed
           secret:
