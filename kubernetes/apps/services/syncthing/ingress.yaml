@@ -1,6 +1,8 @@
-# LAN-only (same reasoning as Grafana/Hubble): the GUI holds device
-# pairing info, no reason for it to be internet-reachable. Actual sync
-# traffic goes through service-sync.yaml instead, not this Ingress.
+# Public (user wants remote GUI access), proxied group — low-bandwidth
+# GUI only, the actual sync protocol goes through service-sync.yaml's own
+# LoadBalancer IP, not this Ingress. GUI auth is mandatory here (see the
+# init container in deployment.yaml) precisely because it's reachable
+# from the internet, not just the LAN.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:

@@ -167,14 +167,23 @@ OBS scenes). Longhorn, not NFS — small config files syncing constantly,
 no reason to put NAS latency in the loop. R2-backed (device pairing +
 the synced files themselves, both irreplaceable).
 
-Two Services, not one: `syncthing-gui` (port 8384, behind the LAN-only
-Ingress, same reasoning as Grafana/Hubble — holds device pairing info, no
-reason to expose it publicly) and `syncthing-sync` (its own LoadBalancer
-IP from the same Cilium pool Traefik uses, port 22000 tcp+udp — sync
-traffic isn't HTTP, Traefik can't route it). Works on the LAN as-is;
-forward 22000 tcp+udp on the UDM Pro too if direct sync while away from
-home ever matters (otherwise Syncthing's public relay servers handle NAT
-traversal automatically, just slower).
+Two Services, not one: `syncthing-gui` (port 8384, public at
+`syncthing.nvlab.fr`, proxied group — remote GUI access was wanted, and
+it's low-bandwidth so Cloudflare's WAF/hidden-origin-IP is a clear win)
+and `syncthing-sync` (its own LoadBalancer IP from the same Cilium pool
+Traefik uses, port 22000 tcp+udp — sync traffic isn't HTTP, Traefik can't
+route it, so it never goes through the public hostname at all). Works on
+the LAN as-is for sync; forward 22000 tcp+udp on the UDM Pro too if direct
+sync while away from home ever matters (otherwise Syncthing's public relay
+servers handle NAT traversal automatically, just slower).
+
+**GUI authentication is mandatory, not optional**, precisely because the
+GUI is now internet-reachable: Syncthing has no env-var-based way to set
+it, so a `set-gui-credentials` init container runs
+`syncthing generate --gui-user=... --gui-password=...` (credentials from
+[`gui-credentials.sops.yaml`](kubernetes/apps/services/syncthing/gui-credentials.sops.yaml))
+on every pod start — safe to re-run idempotently, it only touches the
+GUI user/password fields and leaves the device cert/ID alone.
 
 Device pairing (adding the MacBook/gaming PC as remote devices, creating
 the shared folder) is a one-time manual step via the GUI — device IDs

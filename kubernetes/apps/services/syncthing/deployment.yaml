@@ -20,6 +20,33 @@ spec:
       labels:
         app: syncthing
     spec:
+      # `syncthing generate` only touches the GUI user/password fields
+      # (bcrypt-hashed into config.xml) and leaves everything else alone —
+      # safe to re-run idempotently on every pod start, including the
+      # device cert/ID already generated on first boot.
+      initContainers:
+        - name: set-gui-credentials
+          image: syncthing/syncthing:2.1.5
+          command:
+            - syncthing
+            - generate
+            - --home=/var/syncthing
+            - --gui-user=$(STGUIUSER)
+            - --gui-password=$(STGUIPASSWORD)
+          env:
+            - name: STGUIUSER
+              valueFrom:
+                secretKeyRef:
+                  name: gui-credentials
+                  key: STGUIUSER
+            - name: STGUIPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gui-credentials
+                  key: STGUIPASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/syncthing
       containers:
         - name: syncthing
           image: syncthing/syncthing:2.1.5
