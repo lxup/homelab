@@ -18,6 +18,8 @@ spec:
       labels:
         app: postgres
     spec:
+      # See server-deployment.yaml for why.
+      enableServiceLinks: false
       containers:
         - name: postgres
           image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0

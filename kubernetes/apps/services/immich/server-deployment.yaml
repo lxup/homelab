@@ -17,6 +17,13 @@ spec:
       labels:
         app: immich-server
     spec:
+      # Kubernetes auto-injects <SVCNAME>_PORT etc. env vars for every
+      # Service in the namespace (Docker-links compatibility) — collides
+      # with Immich's own REDIS_PORT (expects a plain number, gets the
+      # auto-injected "tcp://10.x.x.x:6379" instead -> "Invalid input:
+      # expected number, received NaN"). Disable it; we set every hostname
+      # explicitly via env anyway.
+      enableServiceLinks: false
       containers:
         - name: immich-server
           image: ghcr.io/immich-app/immich-server:v3.2.4
