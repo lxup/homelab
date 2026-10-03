@@ -24,13 +24,19 @@ spec:
       # (bcrypt-hashed into config.xml) and leaves everything else alone —
       # safe to re-run idempotently on every pod start, including the
       # device cert/ID already generated on first boot.
+      #
+      # --home MUST be /var/syncthing/config, not the /var/syncthing mount
+      # root — the image's own entrypoint sets STHOMEDIR=/var/syncthing/config
+      # internally (a nested subdir), confirmed by exec'ing into the
+      # running container. Using the mount root here silently writes to an
+      # unused parallel config the server never reads.
       initContainers:
         - name: set-gui-credentials
           image: syncthing/syncthing:2.1.5
           command:
             - syncthing
             - generate
-            - --home=/var/syncthing
+            - --home=/var/syncthing/config
             - --gui-user=$(STGUIUSER)
             - --gui-password=$(STGUIPASSWORD)
           env:
