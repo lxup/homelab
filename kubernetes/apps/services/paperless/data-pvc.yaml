@@ -1,0 +1,18 @@
+# Search index, classification model, thumbnails — not the documents
+# themselves (those are on NFS via PAPERLESS_MEDIA_ROOT). Rebuildable from
+# the documents via `document_index reindex` if lost, but R2-backed
+# anyway since that's a manual recovery step worth avoiding.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: paperless-data
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/r2-backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
