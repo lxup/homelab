@@ -1,0 +1,16 @@
+# Monitors + notification config + history, all SQLite — worth the R2
+# backup (small, and annoying to recreate the monitor list by hand).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uptime-kuma-data
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/r2-backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 2Gi
