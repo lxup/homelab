@@ -23,6 +23,8 @@ spec:
       labels:
         app: immich-machine-learning
     spec:
+      # See server-deployment.yaml for why.
+      enableServiceLinks: false
       containers:
         - name: immich-machine-learning
           image: ghcr.io/immich-app/immich-machine-learning:v3.2.4-openvino
