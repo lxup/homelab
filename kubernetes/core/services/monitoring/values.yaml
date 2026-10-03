@@ -1,7 +1,8 @@
 # kube-prometheus-stack: Prometheus + Grafana + Alertmanager + node-exporter
 # (per-node CPU/RAM/disk) + kube-state-metrics (pod/deployment/namespace
-# inventory). Sized modest on purpose — these are 3 small i5 boxes, not a
-# datacenter.
+# inventory). Resources sized generously, not minimally — 3 nodes with
+# 16GB each, barely used cluster-wide, no reason to run this stack on the
+# edge of OOM (already happened once with Grafana).
 
 # CRDs are installed separately in kustomization.yaml (kustomize doesn't
 # render a chart's crds/ directory) — stops the chart's own CRD-install Job
@@ -34,27 +35,24 @@ grafana:
     storageClassName: longhorn
     size: 2Gi
 
-  # Bumped after an OOMKill (exit 137) right after adding the Node
-  # Exporter Full + Homelab Apps dashboards — 256Mi was already marginal,
-  # loading/indexing more dashboards (bleve search index) pushed it over.
   resources:
     requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
+      cpu: 200m
       memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 2Gi
 
 prometheus:
   prometheusSpec:
     retention: 15d
     resources:
       requests:
-        cpu: 100m
-        memory: 512Mi
-      limits:
-        cpu: 500m
+        cpu: 250m
         memory: 1Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -68,11 +66,11 @@ alertmanager:
   alertmanagerSpec:
     resources:
       requests:
-        cpu: 20m
-        memory: 64Mi
-      limits:
-        cpu: 100m
+        cpu: 50m
         memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
     storage:
       volumeClaimTemplate:
         spec:
@@ -85,11 +83,11 @@ alertmanager:
 prometheusOperator:
   resources:
     requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 200m
+      cpu: 100m
       memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 
 nodeExporter:
   enabled: true
