@@ -9,3 +9,6 @@ resources:
   - service-gui.yaml
   - service-sync.yaml
   - ingress.yaml
+
+generators:
+  - ksops-generator.yaml
