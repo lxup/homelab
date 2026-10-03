@@ -58,3 +58,21 @@ endpoints:
     alerts:
       - type: telegram
         send-on-resolved: true
+
+  - name: Paperless
+    url: "https://paperless.nvlab.fr/"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 302"
+    alerts:
+      - type: telegram
+        send-on-resolved: true
+
+  - name: Plex
+    url: "https://media.nvlab.fr/identity"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    alerts:
+      - type: telegram
+        send-on-resolved: true

@@ -11,6 +11,8 @@ APPS = [
     ("Nextcloud", "nextcloud", "☁️"),
     ("Immich", "immich", "📸"),
     ("Jellyfin", "jellyfin", "🎬"),
+    ("Paperless", "paperless", "📄"),
+    ("Gatus", "gatus", "🚦"),
     ("Longhorn", "longhorn-system", "💾"),
     ("cert-manager", "cert-manager", "🔏"),
     ("Monitoring", "monitoring", "📊"),
