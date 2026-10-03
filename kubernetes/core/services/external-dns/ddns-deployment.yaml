@@ -11,11 +11,23 @@
 # internal IP via external-dns-internal (../external-dns-internal/) — no
 # hairpin NAT needed.
 #
-# PROXIED=false (DNS-only / grey cloud) for all hosts: Cloudflare's proxy
-# enforces a hard 100MB request/upload cap on these plans, which would
-# break Nextcloud uploads and hurt Jellyfin/Plex streaming. Revisit on a
-# per-host basis later if WAF/DDoS protection on the low-bandwidth hosts
-# (argocd, bitwarden) becomes worth that trade-off.
+# Two Deployments, not one, because Cloudflare's proxy is an all-or-nothing
+# setting per DDNS instance (PROXIED), but we want it to differ per host:
+#
+# - bitwarden.nvlab.fr and wiki.nvlab.fr were already CNAMEs to the zone
+#   apex (nvlab.fr), itself a proxied (orange cloud) A record someone set
+#   up previously. Low-bandwidth hosts, so the WAF/DDoS protection is worth
+#   keeping — "cloudflare-ddns-proxied" below just takes over keeping the
+#   apex itself fresh (previously relied on something on the old NAS;
+#   now independent of it), and both hostnames ride along via their
+#   existing CNAME for free, no change needed to them.
+# - cloud.nvlab.fr, jellyfin.nvlab.fr and media.nvlab.fr get their own
+#   direct, unproxied (grey cloud, DNS-only) A records instead: Cloudflare's
+#   proxy enforces a hard 100MB request/upload cap on these plans, which
+#   would break Nextcloud uploads and hurt Jellyfin/Plex streaming. Their
+#   old CNAMEs-to-apex were deleted by hand to make room for this.
+# - argocd.nvlab.fr also gets its own unproxied A record (no CNAME existed
+#   for it already — it was the one Ingress the old external-dns managed).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,9 +52,54 @@ spec:
                   name: cloudflare-api-token
                   key: api-token
             - name: DOMAINS
-              value: argocd.nvlab.fr,bitwarden.nvlab.fr,cloud.nvlab.fr,jellyfin.nvlab.fr,media.nvlab.fr,wiki.nvlab.fr
+              value: argocd.nvlab.fr,cloud.nvlab.fr,jellyfin.nvlab.fr,media.nvlab.fr
             - name: PROXIED
               value: "false"
+            - name: IP6_PROVIDER
+              value: "none"
+            - name: UPDATE_CRON
+              value: "@every 5m"
+            - name: DELETE_ON_STOP
+              value: "false"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-ddns-proxied
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflare-ddns-proxied
+  template:
+    metadata:
+      labels:
+        app: cloudflare-ddns-proxied
+    spec:
+      containers:
+        - name: cloudflare-ddns
+          image: ghcr.io/favonia/cloudflare-ddns:1
+          env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflare-api-token
+                  key: api-token
+            - name: DOMAINS
+              value: nvlab.fr
+            - name: PROXIED
+              value: "true"
             - name: IP6_PROVIDER
               value: "none"
             - name: UPDATE_CRON
