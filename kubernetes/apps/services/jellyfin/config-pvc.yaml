@@ -1,0 +1,19 @@
+# Migrated once from the NAS (/mnt/user/appdata/jellyfin) via a one-off
+# Job, not shared live with the old instance — same reasoning as every
+# other migration here: SQLite (Jellyfin's library.db) over a live NFS
+# share accessed by two instances at once risks corruption, so the old
+# instance keeps its own untouched copy until final cutover.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jellyfin-config
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/r2-backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi
