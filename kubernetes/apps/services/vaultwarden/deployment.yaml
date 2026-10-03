@@ -9,9 +9,7 @@ kind: Deployment
 metadata:
   name: vaultwarden
 spec:
-  # Temporarily 0 to test that Gatus actually fires a Telegram alert —
-  # revert to 1 right after confirming.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume — never run two pods at once
   selector:
