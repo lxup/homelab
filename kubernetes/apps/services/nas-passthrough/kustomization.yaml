@@ -11,6 +11,5 @@ kind: Kustomization
 namespace: nas-passthrough
 
 resources:
-  - wiki.yaml
   - jellyfin.yaml
   - media.yaml
