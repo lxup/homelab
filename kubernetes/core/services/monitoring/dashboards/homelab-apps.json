@@ -1878,7 +1878,7 @@
     {
       "id": 38,
       "type": "row",
-      "title": "\ud83d\udcbe Longhorn",
+      "title": "\ud83d\udcc4 Paperless",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1934,7 +1934,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"longhorn-system\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"paperless\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -1990,7 +1990,7 @@
       },
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"longhorn-system\",container!=\"\",container!=\"POD\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"paperless\",container!=\"\",container!=\"POD\"}) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -2046,7 +2046,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"longhorn-system\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"paperless\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2055,7 +2055,7 @@
           }
         },
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"longhorn-system\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"paperless\"}[5m])) by (pod)",
           "refId": "B",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2114,7 +2114,7 @@
       },
       "targets": [
         {
-          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"longhorn-system\"})",
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"paperless\"})",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -2126,7 +2126,7 @@
     {
       "id": 43,
       "type": "row",
-      "title": "\ud83d\udd0f cert-manager",
+      "title": "\ud83d\udea6 Gatus",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -2182,7 +2182,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"cert-manager\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"gatus\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -2238,7 +2238,7 @@
       },
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"cert-manager\",container!=\"\",container!=\"POD\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"gatus\",container!=\"\",container!=\"POD\"}) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -2294,7 +2294,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"cert-manager\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"gatus\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2303,7 +2303,7 @@
           }
         },
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"cert-manager\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"gatus\"}[5m])) by (pod)",
           "refId": "B",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2362,7 +2362,7 @@
       },
       "targets": [
         {
-          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"cert-manager\"})",
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"gatus\"})",
           "refId": "A",
           "datasource": {
             "type": "prometheus",
@@ -2374,7 +2374,7 @@
     {
       "id": 48,
       "type": "row",
-      "title": "\ud83d\udcca Monitoring",
+      "title": "\ud83d\udcbe Longhorn",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -2430,7 +2430,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"monitoring\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"longhorn-system\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -2486,7 +2486,7 @@
       },
       "targets": [
         {
-          "expr": "sum(container_memory_working_set_bytes{namespace=\"monitoring\",container!=\"\",container!=\"POD\"}) by (pod)",
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"longhorn-system\",container!=\"\",container!=\"POD\"}) by (pod)",
           "refId": "A",
           "legendFormat": "{{pod}}",
           "datasource": {
@@ -2542,7 +2542,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"monitoring\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"longhorn-system\"}[5m])) by (pod)",
           "refId": "A",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2551,7 +2551,7 @@
           }
         },
         {
-          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"monitoring\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"longhorn-system\"}[5m])) by (pod)",
           "refId": "B",
           "legendFormat": "rx {{pod}}",
           "datasource": {
@@ -2572,6 +2572,502 @@
       "gridPos": {
         "x": 22,
         "y": 70,
+        "w": 2,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"longhorn-system\"})",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "type": "row",
+      "title": "\ud83d\udd0f cert-manager",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 77,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 54,
+      "type": "timeseries",
+      "title": "CPU Usage",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 78,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"cert-manager\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "type": "timeseries",
+      "title": "Memory Usage",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 78,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"cert-manager\",container!=\"\",container!=\"POD\"}) by (pod)",
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "type": "timeseries",
+      "title": "Network I/O",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 78,
+        "w": 6,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"cert-manager\"}[5m])) by (pod)",
+          "refId": "A",
+          "legendFormat": "rx {{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"cert-manager\"}[5m])) by (pod)",
+          "refId": "B",
+          "legendFormat": "rx {{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 57,
+      "type": "stat",
+      "title": "Restarts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 22,
+        "y": 78,
+        "w": 2,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
+      "targets": [
+        {
+          "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"cert-manager\"})",
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "type": "row",
+      "title": "\ud83d\udcca Monitoring",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 85,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 59,
+      "type": "timeseries",
+      "title": "CPU Usage",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 86,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"monitoring\",container!=\"\",container!=\"POD\"}[5m])) by (pod)",
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 60,
+      "type": "timeseries",
+      "title": "Memory Usage",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 86,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{namespace=\"monitoring\",container!=\"\",container!=\"POD\"}) by (pod)",
+          "refId": "A",
+          "legendFormat": "{{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 61,
+      "type": "timeseries",
+      "title": "Network I/O",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 86,
+        "w": 6,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 15,
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=\"monitoring\"}[5m])) by (pod)",
+          "refId": "A",
+          "legendFormat": "rx {{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=\"monitoring\"}[5m])) by (pod)",
+          "refId": "B",
+          "legendFormat": "rx {{pod}}",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "type": "stat",
+      "title": "Restarts",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "x": 22,
+        "y": 86,
         "w": 2,
         "h": 7
       },
