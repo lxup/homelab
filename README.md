@@ -55,6 +55,26 @@ cluster VLAN to reach it. Same requirement for
 management API (`10.10.10.1:443`) needs to be reachable from the cluster
 VLAN too.
 
+### NFS stability (stale file handles)
+
+Every NFS-backed app (Nextcloud, Immich, Jellyfin, Paperless) has hit
+`ESTALE` ("Stale file handle") on its NFS mount at least once — the pod
+stays `Running`/`Ready` (nothing crashes) but every request touching the
+mount fails, silently, until something notices. Likely cause: Unraid's
+mover relocating files between cache and array invalidates the file
+handle a long-lived NFS client is still holding — if this theory's right,
+setting a share's Primary storage straight to `Array` (no cache, no
+mover) for shares mounted long-term by the cluster would eliminate it at
+the source. Not yet confirmed or acted on.
+
+Mitigated, not fixed: every one of these Deployments now has a
+`livenessProbe` hitting the same endpoint its `readinessProbe` already
+uses — confirmed that endpoint actually reflects mount health (e.g.
+Nextcloud's `/status.php` 503s exactly when `/data` is stale), so a stale
+mount now self-heals via container restart (which forces a fresh NFS
+mount) within ~90s instead of staying broken for hours until manually
+restarted.
+
 ## DNS (split-horizon) and public exposure
 
 The UDM Pro port-forwards 80/443 directly to Traefik's LB IP

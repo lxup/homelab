@@ -71,6 +71,26 @@ spec:
             limits:
               cpu: 4
               memory: 6Gi
+          # Had no probes at all until a stale NFS mount (recurring issue
+          # on this NAS — see README) left the pod "Running" and silently
+          # serving 503s for hours with nothing to notice or recover.
+          # status.php already reflects mount health (confirmed: it 503s
+          # exactly when /data is stale) — livenessProbe means a stale
+          # mount now self-heals via restart instead of staying broken
+          # until someone notices and restarts it by hand.
+          readinessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          livenessProbe:
+            httpGet:
+              path: /status.php
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
       volumes:
         - name: seed
           secret:

@@ -82,6 +82,17 @@ spec:
               path: /
               port: 8000
             initialDelaySeconds: 20
+            periodSeconds: 30
+          # Nextcloud's NFS mount has gone stale (ESTALE) multiple times on
+          # this NAS with no probe to catch it, staying silently broken for
+          # hours — adding this here too since /media is NFS the same way.
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
       volumes:
         - name: data
           persistentVolumeClaim:
