@@ -12,12 +12,7 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  # Temporarily 0 to patch an empty <ServerName /> in system.xml directly
-  # (the startup wizard's server-name step got skipped but
-  # IsStartupWizardCompleted was still set true, leaving the Dashboard
-  # Settings page crashing on a null config read) — revert to 1 right
-  # after.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
