@@ -12,7 +12,12 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  replicas: 1
+  # Temporarily 0 for a full config reset (user request — migrated DB got
+  # emptied by Jellyfin's own clean-up task during the NFS mount outages,
+  # not worth untangling; media files on the NAS are untouched, user has
+  # the old NAS container as a fallback too) — revert to 1 right after the
+  # PVC is wiped.
+  replicas: 0
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
