@@ -78,16 +78,29 @@ spec:
           # exactly when /data is stale) — livenessProbe means a stale
           # mount now self-heals via restart instead of staying broken
           # until someone notices and restarts it by hand.
+          #
+          # httpHeaders Host override is required: kubelet's probe uses the
+          # pod IP as Host by default, which Nextcloud rejects outright
+          # ({"error":"Trusted domain error.","code":15}, HTTP 400) since
+          # trusted_domains only lists cloud.nvlab.fr — confirmed this
+          # caused false-positive probe failures on a perfectly healthy
+          # pod before this fix.
           readinessProbe:
             httpGet:
               path: /status.php
               port: 80
+              httpHeaders:
+                - name: Host
+                  value: cloud.nvlab.fr
             initialDelaySeconds: 20
             periodSeconds: 30
           livenessProbe:
             httpGet:
               path: /status.php
               port: 80
+              httpHeaders:
+                - name: Host
+                  value: cloud.nvlab.fr
             initialDelaySeconds: 30
             periodSeconds: 30
             failureThreshold: 3
