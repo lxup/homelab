@@ -12,7 +12,10 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  replicas: 1
+  # Temporarily 0 for another full config reset (2nd time — the share's
+  # NFS settings got changed mid-setup again, corrupting the in-progress
+  # config) — revert to 1 right after the PVC is wiped.
+  replicas: 0
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
