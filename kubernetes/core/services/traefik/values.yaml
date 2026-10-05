@@ -1,5 +1,11 @@
 service:
   type: LoadBalancer
+  # Kubernetes/Cilium drops mixed TCP+UDP ports from one LoadBalancer here.
+  # The chart's split-service mode lets Cilium share the same IP across the
+  # TCP and UDP Services (required because LAN DNS points at one IP).
+  single: false
+  annotations:
+    lbipam.cilium.io/sharing-key: traefik
 
 ports:
   web:
