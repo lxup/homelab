@@ -12,6 +12,10 @@ ports:
     http:
       tls:
         enabled: true
+    # HTTP/3 uses QUIC over UDP/443. This is needed by LAN clients whose
+    # split-DNS points directly at Traefik instead of Cloudflare.
+    http3:
+      enabled: true
 
 ingressClass:
   enabled: true
