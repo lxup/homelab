@@ -22,6 +22,9 @@ ports:
     # split-DNS points directly at Traefik instead of Cloudflare.
     http3:
       enabled: true
+      # Keep UDP distinct from TCP/443 so Cilium can assign both Services
+      # the same LoadBalancer IP; Traefik advertises this via Alt-Svc.
+      advertisedPort: 8443
 
 ingressClass:
   enabled: true
