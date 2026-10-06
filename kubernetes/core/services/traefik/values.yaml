@@ -16,6 +16,9 @@ ports:
           to: websecure
           scheme: https
   websecure:
+    # Use a numeric target so Kubernetes can route the HTTP/3 UDP Service
+    # even if it merges away the duplicate named TCP/UDP container port.
+    targetPort: 8443
     http:
       tls:
         enabled: true
