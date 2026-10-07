@@ -1,12 +1,5 @@
 service:
   type: LoadBalancer
-  # Kubernetes/Cilium drops mixed TCP+UDP ports from one LoadBalancer here.
-  # The chart's split-service mode lets Cilium share the same IP across the
-  # TCP and UDP Services (required because LAN DNS points at one IP).
-  single: false
-  annotations:
-    lbipam.cilium.io/sharing-key: traefik
-    lbipam.cilium.io/ips: 10.10.100.200
 
 ports:
   web:
@@ -16,19 +9,9 @@ ports:
           to: websecure
           scheme: https
   websecure:
-    # Use a numeric target so Kubernetes can route the HTTP/3 UDP Service
-    # even if it merges away the duplicate named TCP/UDP container port.
-    targetPort: 8443
     http:
       tls:
         enabled: true
-    # HTTP/3 uses QUIC over UDP/443. This is needed by LAN clients whose
-    # split-DNS points directly at Traefik instead of Cloudflare.
-    http3:
-      enabled: true
-      # Keep UDP distinct from TCP/443 so Cilium can assign both Services
-      # the same LoadBalancer IP; Traefik advertises this via Alt-Svc.
-      advertisedPort: 8443
 
 ingressClass:
   enabled: true
