@@ -23,6 +23,21 @@ spec:
       labels:
         app: nextcloud
     spec:
+      # Temporary: elitedesk-01's kubelet is holding a stale NFS mount for
+      # this exact server+path (ESTALE at the host level, confirmed healthy
+      # via a fresh mount from a throwaway pod — only the already-mounted
+      # one on this node is broken). Steering the pod to a different node
+      # forces a brand-new mount instead of reusing the stale one. Remove
+      # once rescheduled successfully.
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - elitedesk-01
       securityContext:
         fsGroup: 33 # www-data, matches the official image's runtime user
       initContainers:
