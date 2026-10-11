@@ -1,0 +1,27 @@
+# Public via the UDM Pro's 80/443 port-forward to Traefik's LB IP — the
+# Cloudflare A record is kept pointed at the home WAN IP by the DDNS
+# updater (kubernetes/core/services/external-dns/), proxied (orange
+# cloud).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - antoinequehec.com
+      secretName: antoinequehec-tls
+  rules:
+    - host: antoinequehec.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 3000

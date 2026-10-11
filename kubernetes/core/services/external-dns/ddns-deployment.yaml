@@ -18,6 +18,8 @@
 #   bitwarden, and syncthing (its GUI only — the actual sync protocol uses
 #   its own LoadBalancer IP/port, not this hostname). Low-bandwidth hosts,
 #   so Cloudflare's WAF/DDoS protection and hidden origin IP are worth it.
+#   Also antoinequehec.com + strapi.antoinequehec.com — proxy wanted there
+#   too despite Strapi media uploads, per explicit call on that trade-off.
 # - cloudflare-ddns (PROXIED=false): cloud (Nextcloud), jellyfin, media
 #   (Plex), immich, paperless. Cloudflare's proxy enforces a hard 100MB
 #   request/upload cap on these plans, which would break Nextcloud/Immich/
@@ -93,7 +95,7 @@ spec:
                   name: cloudflare-api-token
                   key: api-token
             - name: DOMAINS
-              value: nvlab.fr,argocd.nvlab.fr,bitwarden.nvlab.fr,syncthing.nvlab.fr
+              value: nvlab.fr,argocd.nvlab.fr,bitwarden.nvlab.fr,syncthing.nvlab.fr,antoinequehec.com,strapi.antoinequehec.com
             - name: PROXIED
               value: "true"
             - name: IP6_PROVIDER

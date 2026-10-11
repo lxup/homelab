@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: antoinequehec
+
+resources:
+  - postgres-pvc.yaml
+  - postgres-deployment.yaml
+  - postgres-service.yaml
+  - strapi-data-pvc.yaml
+  - strapi-deployment.yaml
+  - strapi-service.yaml
+  - strapi-ingress.yaml
+  - web-deployment.yaml
+  - web-service.yaml
+  - web-ingress.yaml
+
+generators:
+  - ksops-generator.yaml

@@ -1,0 +1,112 @@
+# Same image as the Coolify/Elestio setup on the VPS (elestio/strapi-
+# development) — the actual project (content-types, routes, controllers)
+# isn't baked into this image, it lives on disk under config/ and src/,
+# migrated into strapi-data below and bind-mounted at the same paths the
+# Elestio compose template used.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strapi
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single ReadWriteOnce volume (strapi-data)
+  selector:
+    matchLabels:
+      app: strapi
+  template:
+    metadata:
+      labels:
+        app: strapi
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: strapi
+          image: elestio/strapi-development:latest
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DATABASE_CLIENT
+              value: postgres
+            - name: DATABASE_HOST
+              value: postgres
+            - name: DATABASE_PORT
+              value: "5432"
+            - name: DATABASE_SSL
+              value: "false"
+            - name: DATABASE_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_DB
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_USER
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: POSTGRES_PASSWORD
+            - name: APP_KEYS
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: APP_KEYS
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: JWT_SECRET
+            - name: ADMIN_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: ADMIN_JWT_SECRET
+            - name: API_TOKEN_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: API_TOKEN_SALT
+            - name: TRANSFER_TOKEN_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: TRANSFER_TOKEN_SALT
+          ports:
+            - containerPort: 1337
+          volumeMounts:
+            - name: data
+              mountPath: /opt/app/config
+              subPath: config
+            - name: data
+              mountPath: /opt/app/src
+              subPath: src
+            - name: data
+              mountPath: /opt/app/public/uploads
+              subPath: uploads
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1
+              memory: 1Gi
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 1337
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: 1337
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: strapi-data

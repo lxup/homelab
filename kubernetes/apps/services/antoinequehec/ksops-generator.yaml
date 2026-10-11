@@ -1,0 +1,12 @@
+apiVersion: viaduct.ai/v1
+kind: ksops
+metadata:
+  name: antoinequehec-secrets-generator
+  annotations:
+    config.kubernetes.io/function: |
+      exec:
+        path: ksops
+files:
+  - ./db-credentials.sops.yaml
+  - ./app-secret.sops.yaml
+  - ./ghcr-pull-secret.sops.yaml

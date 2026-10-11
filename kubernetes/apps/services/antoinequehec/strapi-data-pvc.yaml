@@ -1,0 +1,19 @@
+# Holds the custom Strapi project itself (content-type schemas under
+# config/ and src/, built via the admin UI — there is no separate git repo
+# for the backend, unlike the Next.js frontend) plus the media uploads.
+# Populated once via rsync from the Elestio/Coolify VPS volumes, then
+# mounted into the strapi container by subPath below.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: strapi-data
+  labels:
+    recurring-job.longhorn.io/source: enabled
+    recurring-job-group.longhorn.io/r2-backup: enabled
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,27 @@
+# Public via the UDM Pro's 80/443 port-forward to Traefik's LB IP — the
+# Cloudflare A record is kept pointed at the home WAN IP by the DDNS
+# updater (kubernetes/core/services/external-dns/), proxied (orange
+# cloud) like the rest of this domain.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: strapi
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-production
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - strapi.antoinequehec.com
+      secretName: strapi-tls
+  rules:
+    - host: strapi.antoinequehec.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: strapi
+                port:
+                  number: 1337
