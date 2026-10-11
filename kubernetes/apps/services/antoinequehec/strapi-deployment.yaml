@@ -23,6 +23,15 @@ spec:
       containers:
         - name: strapi
           image: elestio/strapi-development:latest
+          # Bypass the image's entrypoint.sh: it runs `yarn add
+          # @strapi/provider-email-nodemailer` on every container start
+          # (node_modules isn't persisted — every pod restart is a fresh
+          # container), a live npm resolution that broke outright when a
+          # transitive dependency's pinned version got unpublished. `yarn
+          # start` also uses the build/ the image already compiled at
+          # build time, instead of dev mode's heavier yarn develop.
+          command: ["/bin/bash", "-c"]
+          args: ["yarn start"]
           env:
             - name: NODE_ENV
               value: production
