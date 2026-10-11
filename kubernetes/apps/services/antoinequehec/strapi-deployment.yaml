@@ -8,7 +8,7 @@ kind: Deployment
 metadata:
   name: strapi
 spec:
-  replicas: 0 # scaled down during data migration — see commit history
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume (strapi-data)
   selector:
