@@ -23,3 +23,12 @@ creation_rules:
     key_groups:
       - age:
           - *homelab
+
+  # Bootstrap-time Helm values that carry a secret — currently just the
+  # GitHub webhook shared secret for ArgoCD. Not a Kubernetes manifest, so
+  # it can't go through ksops: cli/ decrypts it on the fly and hands it to
+  # `helm upgrade` as an extra --values file (see src/steps/11-install-argocd.ts).
+  - path_regex: bootstrap/.*\.sops\.ya?ml$
+    key_groups:
+      - age:
+          - *homelab

@@ -277,8 +277,68 @@ you lose it, every encrypted file in this repo becomes unrecoverable).
 - any `kubernetes/**/*.sops.yaml` — Kubernetes secrets, decrypted in-cluster
   by ArgoCD's repo-server via [ksops](https://github.com/viaduct-ai/kustomize-sops)
   (wired up in `bootstrap/argocd/values.yaml`)
+- any `bootstrap/**/*.sops.yaml` — Helm values needed *before* GitOps exists,
+  decrypted locally by the CLI and piped straight into `helm upgrade`
+  (today: the GitHub webhook secret, see below)
 
 Everything in git stays encrypted; only the cluster can decrypt it.
+
+## GitHub webhook
+
+Without it ArgoCD polls the repo every 3 minutes, so a push takes up to that
+long to land. The webhook makes it instant. Two halves:
+
+1. **Cluster side** — a shared secret in `argocd-secret` under
+   `webhook.github.secret`. That Secret belongs to ArgoCD's own Helm release
+   (it also holds the admin password and the server signing key), so it is
+   deliberately *not* GitOps-managed and ksops can't reach it. Instead the
+   value lives in `bootstrap/argocd/values.secret.sops.yaml` as the chart's
+   `configs.secret.githubSecret`, which `cli/src/steps/11-install-argocd.ts`
+   decrypts into a short-lived 0600 temp file and passes to helm as a second
+   `--values`. To create or rotate it:
+
+   ```sh
+   TOKEN=$(openssl rand -hex 32)
+   cat > bootstrap/argocd/values.secret.sops.yaml <<YAML
+   configs:
+     secret:
+       githubSecret: $TOKEN
+   YAML
+   sops -e -i bootstrap/argocd/values.secret.sops.yaml
+   echo "$TOKEN"   # paste this into GitHub, then forget it
+   ```
+
+   Then re-run the installer to push it into the cluster — it already sets
+   both env vars below for you. To do just the helm step by hand:
+
+   ```sh
+   export KUBECONFIG=$PWD/kubeconfig
+   export SOPS_AGE_KEY_FILE=$HOME/.config/sops/age/keys.txt
+   helm upgrade --install argocd argo/argo-cd -n argocd \
+     -f bootstrap/argocd/values.yaml \
+     -f <(sops -d bootstrap/argocd/values.secret.sops.yaml) \
+     --wait
+   ```
+
+   `SOPS_AGE_KEY_FILE` is not optional on macOS: sops looks for the key in
+   `os.UserConfigDir()`, i.e. `~/Library/Application Support/sops/age/`, not
+   in `~/.config/sops/age/` where the installer puts it — so an unqualified
+   `sops -d` fails with "Did not find keys in locations …". Encryption still
+   works without it (it only needs the public key from `.sops.yaml`), which
+   is why this only bites on decrypt. Every `sops` call in `cli/` passes the
+   path explicitly for this reason.
+
+   The encrypted file is optional — if it's absent ArgoCD installs fine and
+   simply keeps polling.
+
+2. **GitHub side** — repo *Settings → Webhooks → Add webhook*:
+   payload URL `https://argocd.nvlab.fr/api/webhook`, content type
+   `application/json`, secret = the token above, event = *Just the push
+   event*. ArgoCD refreshes every Application whose `repoURL` matches the
+   pushed repo, so one webhook covers the whole app-of-apps tree.
+
+This is why `argocd.nvlab.fr` is publicly reachable at all — see the comment
+at the top of [`kubernetes/core/services/argocd/ingress.yaml`](kubernetes/core/services/argocd/ingress.yaml).
 
 ## Dashboards
 
