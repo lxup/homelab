@@ -24,7 +24,20 @@ spec:
         app: nextcloud
     spec:
       securityContext:
-        fsGroup: 33 # www-data, matches the official image's runtime user
+        # 100 = `users`, not 33 = `www-data`, so the config and custom_apps
+        # PVCs are group-owned by the same gid Apache's workers run under
+        # (see APACHE_RUN_GROUP below). Setting APACHE_RUN_GROUP without
+        # this took the instance down with "Cannot write into config
+        # directory": Apache's per-worker initgroups() leaves the worker
+        # with gid 100 and NO membership of 33, because the image's
+        # /etc/group entry is `www-data:x:33:` with no members — 33 is only
+        # www-data's primary gid in /etc/passwd. config.php itself stays
+        # chowned 33:33 by the init container and is reached through the
+        # owner bits, which is what `occ` needs. Verified against a throwaway
+        # PVC before this went in: dir 0:100 0775 and writable by uid 33 /
+        # gid 100, config.php writable, atomic tmp+rename writes fine.
+        # Does not affect /data: fsGroup is ignored for nfs volumes.
+        fsGroup: 100
       initContainers:
         - name: seed-config
           image: busybox:1.36
@@ -52,6 +65,23 @@ spec:
           image: nextcloud:35-apache
           ports:
             - containerPort: 80
+          env:
+            # Apache's workers — the processes that write files — run with
+            # group `users` (gid 100) instead of `www-data` (gid 33), so
+            # everything Nextcloud creates on /naegativ lands as 33:100 and
+            # stays writable over SMB. Every Unraid Share User is in `users`
+            # already and the whole share is gid 100, so no group needs
+            # creating on the NAS (its rootfs is in RAM, so a custom group
+            # would have to be recreated from /boot/config/go every boot).
+            # Requires fsGroup: 100 above — see the comment there.
+            #
+            # An env var, not runAsGroup/supplementalGroups: PID 1 here is
+            # root and Apache's per-worker setgid + initgroups() replaces
+            # whatever group list the pod spec set. apache2.conf reads
+            # `Group ${APACHE_RUN_GROUP}` and /etc/apache2/envvars defaults
+            # it with `:=`, so this wins.
+            - name: APACHE_RUN_GROUP
+              value: users
           volumeMounts:
             - name: config
               mountPath: /var/www/html/config
