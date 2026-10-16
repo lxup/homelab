@@ -62,18 +62,29 @@ Every NFS-backed app (Nextcloud, Immich, Jellyfin, Paperless) has hit
 stays `Running`/`Ready` (nothing crashes) but every request touching the
 mount fails, silently, until something notices. Likely cause: Unraid's
 mover relocating files between cache and array invalidates the file
-handle a long-lived NFS client is still holding — if this theory's right,
-setting a share's Primary storage straight to `Array` (no cache, no
-mover) for shares mounted long-term by the cluster would eliminate it at
-the source. Not yet confirmed or acted on.
+handle a long-lived NFS client is still holding.
 
-Mitigated, not fixed: every one of these Deployments now has a
-`livenessProbe` hitting the same endpoint its `readinessProbe` already
-uses — confirmed that endpoint actually reflects mount health (e.g.
-Nextcloud's `/status.php` 503s exactly when `/data` is stale), so a stale
-mount now self-heals via container restart (which forces a fresh NFS
-mount) within ~90s instead of staying broken for hours until manually
-restarted.
+Acted on 2026-10-16, still unconfirmed: `naegativ` and `nextcloud` both
+have Primary storage set straight to `Array` (no cache, no mover). Note
+that the *transition itself* invalidated handles — changing a share's
+settings re-exports it, and that staled the mounts of **other** shares
+too. After touching any share, check every NFS-backed pod, not just the
+one changed. Whether Array actually prevents recurrence will only be
+clear after a few quiet days.
+
+**A `livenessProbe` does not heal this.** The previous claim here that it
+did was wrong. A probe failure restarts the *container*, but an NFS volume
+belongs to the *pod*: the kubelet mounts it before any container starts,
+so the new container reuses the same stale mount. It is worse than a
+no-op — the kubelet must `stat` the volume directory to build the next
+container's OCI spec, that `stat` fails with `ESTALE`, and the pod wedges
+in `CreateContainerError`/`BackOff` indefinitely.
+
+Keep the probes anyway: they turn a silent failure into a loud one. But
+recovery is **manual** — `kubectl delete pod` is the only thing that
+forces a fresh mount (needed three times in one evening on 2026-10-16). A
+watchdog that deletes the pod on a sustained 503 would be the real fix;
+not built yet.
 
 ## DNS (split-horizon) and public exposure
 

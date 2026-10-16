@@ -132,10 +132,16 @@ spec:
           # Had no probes at all until a stale NFS mount (recurring issue
           # on this NAS — see README) left the pod "Running" and silently
           # serving 503s for hours with nothing to notice or recover.
-          # status.php already reflects mount health (confirmed: it 503s
-          # exactly when /data is stale) — livenessProbe means a stale
-          # mount now self-heals via restart instead of staying broken
-          # until someone notices and restarts it by hand.
+          # status.php does reflect mount health (confirmed: it 503s
+          # exactly when /data is stale), so the probes make the failure
+          # loud. They do NOT heal it, contrary to what this comment
+          # claimed before 2026-10-16: a probe failure restarts the
+          # container, while the NFS volume belongs to the pod — the
+          # kubelet mounts it before any container starts, so the restart
+          # reuses the same stale mount. The kubelet then cannot even
+          # `stat` that directory to build the next container's OCI spec,
+          # and the pod wedges in CreateContainerError. Only
+          # `kubectl delete pod` forces a fresh mount.
           #
           # httpHeaders Host override is required: kubelet's probe uses the
           # pod IP as Host by default, which Nextcloud rejects outright
