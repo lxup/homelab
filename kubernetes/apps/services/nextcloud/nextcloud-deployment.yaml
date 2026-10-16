@@ -51,7 +51,18 @@ spec:
               else
                 echo "config.php already present, leaving it alone"
               fi
-              chmod 0775 /config
+              # Own the dirs by UID 33, not just group: Apache's workers run
+              # as 33:100 (APACHE_RUN_GROUP) while `occ` runs as 33:33,
+              # because `su www-data` calls initgroups() and drops the gid
+              # 100 that fsGroup injects. Group-write alone therefore serves
+              # exactly one of the two and breaks the other with "Cannot
+              # write into config directory" — group-owning by 100 broke occ,
+              # by 33 broke Apache. Both run as UID 33, so the owner bits are
+              # the only thing that covers both. Verified on the live pod
+              # with the failing invocation (groups=33 only): occ status and
+              # files_external:verify both recovered on this chown alone.
+              chown 33:100 /config /custom_apps
+              chmod 0775 /config /custom_apps
               chmod 0664 /config/config.php
               chown 33:33 /config/config.php # occ requires exact UID ownership match, not just group-write
           volumeMounts:
@@ -60,6 +71,10 @@ spec:
               readOnly: true
             - name: config
               mountPath: /config
+            # Mounted only so the chown above reaches it; app installs and
+            # updates write here from both Apache and occ.
+            - name: custom-apps
+              mountPath: /custom_apps
       containers:
         - name: nextcloud
           image: nextcloud:35-apache
