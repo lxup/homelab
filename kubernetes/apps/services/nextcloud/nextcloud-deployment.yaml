@@ -52,28 +52,6 @@ spec:
           image: nextcloud:35-apache
           ports:
             - containerPort: 80
-          env:
-            # Makes Apache's workers — the processes that actually write
-            # files — run with group `users` (gid 100) instead of
-            # `www-data` (gid 33), so everything Nextcloud creates on the
-            # /naegativ share lands as 33:100 and stays writable over SMB.
-            # Every Unraid Share User is in `users` already, and the whole
-            # share is gid 100, so gid 100 is the shared group; no group
-            # needs creating on the NAS (Unraid's rootfs is in RAM, so a
-            # custom group would have to be recreated from
-            # /boot/config/go on every boot).
-            #
-            # This is an env var and NOT `runAsGroup`/`supplementalGroups`
-            # on the pod, because neither would survive: PID 1 here is
-            # root, and Apache does its own setgid + initgroups() per
-            # worker, which REPLACES whatever group list the pod spec set.
-            # `apache2.conf` reads `Group ${APACHE_RUN_GROUP}` and
-            # /etc/apache2/envvars defaults it with `:=`, so an env var
-            # set here wins. Pairs with `localstorage.umask => 0007` in
-            # config.php, which makes those files 0660 and dirs 0770
-            # (group rw, nothing for "other").
-            - name: APACHE_RUN_GROUP
-              value: users
           volumeMounts:
             - name: config
               mountPath: /var/www/html/config
