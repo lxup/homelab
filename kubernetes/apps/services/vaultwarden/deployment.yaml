@@ -9,11 +9,7 @@ kind: Deployment
 metadata:
   name: vaultwarden
 spec:
-  # TEMPORARILY 0 for the vcluster migration; restored in the next commit.
-  # Vaultwarden's vault is a SQLite file inside vaultwarden-data, so the
-  # file copy IS the database migration — and a SQLite file copied from
-  # under a running process is a corrupt vault.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume — never run two pods at once
   selector:
