@@ -8,7 +8,20 @@ kind: Deployment
 metadata:
   name: strapi
 spec:
-  replicas: 1
+  # ┌──────────────────────────────────────────────────────────────────┐
+  # │ TEMPORARILY 0, for the vcluster migration only. Restored in the   │
+  # │ commit right after the data copy.                                 │
+  # │                                                                   │
+  # │ Strapi initialises its volume on first boot. If it starts against │
+  # │ the new, empty PVC before the old volume's contents are copied    │
+  # │ in, it writes a fresh skeleton that the copy then has to overwrite │
+  # │ underneath a running process — and Longhorn volumes are RWO, so   │
+  # │ the copy helper cannot even mount it while Strapi holds it.       │
+  # │                                                                   │
+  # │ Declarative rather than `kubectl scale`, so ArgoCD's selfHeal     │
+  # │ does not undo it mid-copy.                                        │
+  # └──────────────────────────────────────────────────────────────────┘
+  replicas: 0
   strategy:
     type: Recreate # single ReadWriteOnce volume (strapi-data)
   selector:
