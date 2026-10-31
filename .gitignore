@@ -24,3 +24,8 @@ dist/
 # Local env overrides
 .env
 .env.local
+
+# `kustomize build --enable-helm` unpacks every `helmCharts:` chart into a
+# charts/ directory next to its kustomization.yaml. Build artefact,
+# re-downloaded on every render — never source.
+kubernetes/**/charts/
