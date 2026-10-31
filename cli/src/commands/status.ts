@@ -110,6 +110,10 @@ const CHECKS = [
   argoAppCheck("nextcloud", "Nextcloud"),
   argoAppCheck("immich", "Immich"),
   argoAppCheck("nas-passthrough", "Plex (NAS passthrough)"),
+  argoAppCheck("jellyfin", "Jellyfin"),
+  argoAppCheck("cert-manager", "cert-manager"),
+  argoAppCheck("external-dns", "Cloudflare DDNS"),
+  argoAppCheck("external-dns-internal", "external-dns (UniFi)"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };
