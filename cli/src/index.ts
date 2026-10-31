@@ -18,8 +18,8 @@ async function menu() {
   const section = await p.select({
     message: "What do you want to do?",
     options: [
-      { value: "install", label: "Install", hint: "bring up Talos + Kubernetes + ArgoCD from scratch" },
-      { value: "status", label: "Status", hint: "check cluster health, fix what's missing" },
+      { value: "install", label: "Install", hint: "install ArgoCD into this tenant's vcluster and hand it GitOps" },
+      { value: "status", label: "Status", hint: "check this tenant's ArgoCD and apps, fix what's missing" },
     ],
   });
 

@@ -89,21 +89,18 @@ function argoAppCheck(key: string, label: string) {
   };
 }
 
+// Only what this tenant owns. Nodes, Cilium, Longhorn, the GPU plugin,
+// metrics-server and Prometheus belong to lxup/platform — check those with
+// its own `status` command, against its own kubeconfig. Asking about them
+// from in here would report on a cluster this repo does not manage.
+//
+// This list grows as apps migrate into the vcluster: add an
+// argoAppCheck(...) line per Application as it moves out of the platform's
+// transitional bridge and into kubernetes/core/applications/ here.
 const CHECKS = [
-  checkNodes,
-  checkCilium,
   checkArgocd,
   checkRootApp,
   argoAppCheck("argocd-config", "ArgoCD Ingress"),
-  argoAppCheck("cert-manager", "cert-manager"),
-  argoAppCheck("traefik", "Traefik"),
-  argoAppCheck("longhorn", "Longhorn"),
-  argoAppCheck("external-dns", "Cloudflare DDNS"),
-  argoAppCheck("external-dns-internal", "external-dns (UniFi)"),
-  argoAppCheck("cilium-config", "Cilium LB config"),
-  argoAppCheck("intel-gpu-plugin", "Intel GPU plugin"),
-  argoAppCheck("monitoring", "Prometheus + Grafana"),
-  argoAppCheck("metrics-server", "metrics-server"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };

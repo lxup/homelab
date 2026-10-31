@@ -1,87 +1,68 @@
-# homelab CLI
+# `homelab` CLI
 
-Single CLI for installing and managing the homelab cluster. UI: [Listr2](https://listr2.kischnerd.de/)
-for step progress, [`@clack/prompts`](https://www.npmjs.com/package/@clack/prompts) for prompts/menu.
-
-Runs on [Bun](https://bun.sh) — executes the TypeScript directly, no build step.
-
-## Run it
+Everything that cannot be GitOps, because it has to exist before GitOps does.
 
 ```bash
-cd cli
-bun install
-bun start          # interactive menu
-bun start install  # jump straight to install
-bun start status   # jump straight to status
+cd cli && bun install
+bun run src/index.ts          # interactive menu
+bun run src/index.ts install  # install ArgoCD into the vcluster, hand it GitOps
+bun run src/index.ts status   # health check, offers to fix what's missing
 ```
 
-## Sections
+## This no longer creates a cluster
 
-### Install
+It used to: `talhelper gensecret`, `talosctl apply-config`, `talosctl
+bootstrap`, the whole Talos dance against three EliteDesks. That machine now
+belongs to [lxup/platform](https://github.com/lxup/platform), which hands
+this tenant a vcluster.
 
-Same command for the very first node and for adding the 4th one later —
-`talos/talconfig.yaml` always lists every node the cluster will ever have;
-this just asks which of them are physically booted right now and only
-touches those. See `src/commands/install.ts`. Steps run in order from
-`src/steps/`, numbered, each a plain `ListrTask<InstallCtx>` — **every step
-file has a `Doc:` comment above it explaining what it does and why**, read
-those before changing one:
+The only thing that crosses the boundary is a kubeconfig. Produce it there:
 
-1. Read node topology from `talos/talconfig.yaml`.
-2. Check required tools (`talosctl`, `talhelper`, `helm`, `kubectl`, `sops`, `age-keygen`).
-3. Generate/reuse Age key, wire it into `.sops.yaml`.
-4. Generate + encrypt Talos cluster secrets — **once per cluster, ever**.
-5. Render the Cilium manifest Talos installs at first boot.
-6. Validate + render per-node Talos configs (for every node in talconfig,
-   even ones not targeted this run).
-7. **Apply machine config to the targeted node(s) — wipes their disks.**
-8. Bootstrap etcd — **skipped automatically** if a kubeconfig already
-   exists (i.e. this is a node being added, not the first one).
-9. Fetch kubeconfig — skipped if already present.
-10. Wait for the targeted node(s) specifically to go `Ready` (not a raw
-    count, so this works mid-rollout).
-11. Install ArgoCD + the `sops-age` secret (`helm upgrade --install` —
-    idempotent, safe every run).
-12. Apply `kubernetes/core/root.yaml` — ArgoCD takes over from here
-    (idempotent `kubectl apply`).
-
-Safe to re-run except step 4, which refuses to touch an existing
-`talsecret.sops.yaml` (regenerating it invalidates a live cluster's certs)
-— and step 8, which Talos itself refuses to repeat against a live cluster.
-
-### Status
-
-`src/commands/status.ts` checks the health of every core component and
-offers to fix what it can, without fighting GitOps:
-
-- **Talos nodes**, **Cilium** — checked directly via `kubectl` (these aren't ArgoCD-managed).
-- **ArgoCD** — checked via its Helm release + Deployment. If missing or
-  unhealthy, the fix re-runs the ArgoCD install step.
-- **Root app-of-apps** — checked as an ArgoCD `Application` named `root`. If
-  missing, the fix re-applies `kubernetes/core/root.yaml`.
-- Everything else under `kubernetes/core/applications/` (cert-manager,
-  Traefik, Longhorn, Cilium LB config, Intel GPU plugin) —
-  checked as ArgoCD `Application` health/sync status. The fix requests a
-  hard refresh; actual reconciliation is still ArgoCD's job
-  (`automated: { prune: true, selfHeal: true }` on every Application).
-
-### Later
-
-More sections (upgrades, node maintenance, backups, …) go in
-`src/commands/`, registered in the `SECTIONS` map in `src/index.ts`.
-
-## Code layout
-
+```bash
+# in lxup/platform
+bun run src/index.ts tenant        # writes tenants/homelab.kubeconfig
+cp tenants/homelab.kubeconfig ../homelab/kubeconfig
 ```
-src/
-  index.ts        menu + subcommand dispatch
-  commands/       one file per section (install, status, …)
-  steps/          individual install steps, reused by commands
-  lib/
-    context.ts    InstallCtx — state threaded through install steps
-    paths.ts      repo-relative paths
-    exec.ts       execa wrapper that streams into Listr2 task output
-    kubectl.ts    read-only + light-touch kubectl/helm/argo helpers for status
-    retry.ts      retry-with-backoff for "node is still rebooting" steps
-    talconfig.ts  parses talos/talconfig.yaml for the node list
-```
+
+This repo holds no credentials for the platform cluster and does not know
+how its own cluster is built — which is the whole point of the split.
+
+## `install`
+
+| # | Step | Idempotent? |
+|---|---|---|
+| 00 | detect whether ArgoCD is already there | yes |
+| 01 | check `helm`/`kubectl`/`sops`/`age` on PATH | yes |
+| 02 | generate the Age key if absent | yes |
+| 03 | verify `./kubeconfig` — reachable, and **not** the host cluster | yes |
+| 04 | wait for the tenant API to serve `/readyz` | yes |
+| 05 | create the `sops-age` Secret | yes |
+| 06 | `helm upgrade --install` ArgoCD from `bootstrap/argocd/values.yaml` | yes |
+| 07 | apply the ArgoCD repo credential for github.com/lxup | yes, skipped if absent |
+| 08 | `kubectl apply` `kubernetes/core/root.yaml` | yes |
+
+Two orderings are load-bearing:
+
+- **05 before 06** — ArgoCD's repo-server mounts `sops-age` as a volume, and
+  a missing Secret leaves the pod pending forever while `helm --wait` times
+  out.
+- **07 before 08** — step 07 is what lets ArgoCD clone the repo that step 08
+  points it at. Putting that credential under `kubernetes/` instead would be
+  circular: ArgoCD would need to clone the repo to find the credential that
+  lets it clone the repo. It runs unconditionally, so flipping this repo to
+  private is a visibility toggle on GitHub and nothing else.
+
+Step 03 refuses to continue if the kubeconfig points at the host cluster —
+the tell is a `longhorn-system` namespace, which a vcluster never sees. Running
+this against the platform's kubeconfig would install a second ArgoCD into the
+real cluster next to the one managing it.
+
+After step 08, nothing here is needed again: ArgoCD watches
+`kubernetes/core/applications/` and picks up every file added there.
+
+## `status`
+
+Checks only what this tenant owns — its ArgoCD, its root app, its
+Applications. Nodes, Cilium, Longhorn, the GPU plugin and Prometheus belong
+to the platform; check those with its own `status` command against its own
+kubeconfig.

@@ -9,8 +9,20 @@
 # the `argocd` namespace before this is applied, or the repo-server pod
 # hangs forever on a missing volume mount (helm's --wait times out). The
 # CLI creates it first for exactly this reason — see src/commands/install.ts.
+#
+# This now installs into the homelab VCLUSTER, not onto bare metal. Nothing
+# in this file had to change for that, which was the point of the split:
+# cli/ swapped its provisioning step for a kubeconfig and every later step —
+# this one included — was left alone. The Age key is this tenant's own copy,
+# mounted in its own namespace; the platform's sops-age Secret is not
+# visible from inside a vcluster.
+# TLS is terminated by Traefik, not here: argocd-server runs plaintext and
+# the Ingress (kubernetes/core/services/argocd/ingress.yaml) carries the
+# certificate, with `serversscheme: h2c` so Traefik speaks plaintext HTTP/2
+# to it. `insecure` also matters on the first run, before that Ingress
+# exists at all.
 server:
-  insecure: true # no TLS cert yet on first boot; cert-manager + Ingress take over once kubernetes/core is live
+  insecure: true
   extraArgs:
     - --insecure
 

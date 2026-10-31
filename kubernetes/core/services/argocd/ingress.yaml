@@ -1,0 +1,50 @@
+# This tenant's own ArgoCD UI, reclaiming argocd.nvlab.fr.
+#
+# The hostname was held for it: when the platform was split out, the ArgoCD
+# that used to answer here became the PLATFORM's, which exposes no HTTP at
+# all, and the record was deliberately left free rather than repointed. This
+# is the Ingress that takes it back — and with it the GitHub webhook, so a
+# push to lxup/homelab syncs immediately instead of waiting out ArgoCD's
+# 3-minute poll.
+#
+# HOW IT IS SERVED DURING THE MIGRATION. This Ingress is declared inside the
+# homelab vcluster, which has no ingress controller of its own yet: the UDM
+# Pro forwards 80/443 to one IP, 10.10.100.200, and the Traefik already
+# holding it is the one on the real cluster. `sync.toHost.ingresses: true` on
+# this tenant's vcluster (see lxup/platform) copies this object to the host,
+# where that Traefik picks it up and the host's cert-manager issues the
+# certificate. Verified end to end before relying on it — the syncer rewrites
+# both the TLS secretName and the backend service name to their synced forms.
+#
+# AFTER THE MIGRATION nothing here changes. This tenant brings up its own
+# Traefik as the last step, claims .200, and ingress syncing goes back off;
+# this Ingress is then served locally instead of being copied up. Same file
+# either way, which is why it is written as an ordinary Ingress with no
+# migration-specific annotations.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-production
+    # argocd-server runs with --insecure (see bootstrap/argocd/values.yaml),
+    # so Traefik has to talk plaintext HTTP/2 to it rather than TLS.
+    traefik.ingress.kubernetes.io/service.serversscheme: h2c
+spec:
+  tls:
+    - hosts:
+        - argocd.nvlab.fr
+      secretName: argocd-tls
+  rules:
+    - host: argocd.nvlab.fr
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  name: http

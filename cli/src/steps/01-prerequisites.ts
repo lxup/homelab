@@ -2,16 +2,17 @@ import type { ListrTask } from "listr2";
 import { commandExists } from "../lib/exec.js";
 import type { InstallCtx } from "../lib/context.js";
 
+// No talosctl or talhelper: this repo stopped provisioning its own cluster
+// when the platform was split out (lxup/platform). It installs ArgoCD into a
+// vcluster that already exists and hands GitOps the rest.
 const REQUIRED = [
-  { bin: "talosctl", brew: "siderolabs/tap/talosctl" },
-  { bin: "talhelper", brew: "budimanjojo/tap/talhelper" },
   { bin: "helm", brew: "helm" },
   { bin: "kubectl", brew: "kubectl" },
   { bin: "sops", brew: "sops" },
   { bin: "age-keygen", brew: "age" },
 ];
 
-/** Doc: these run on your laptop/workstation, not on the nodes themselves. */
+/** Doc: these run on your laptop/workstation. */
 export const prerequisitesStep: ListrTask<InstallCtx> = {
   title: "Check required tools",
   task: async (_ctx, task) => {

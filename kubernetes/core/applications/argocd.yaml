@@ -1,0 +1,29 @@
+# Config for this tenant's ArgoCD — its Ingress, and nothing else. The
+# install itself is imperative (bootstrap/argocd/values.yaml, applied by
+# cli/) so that a bad sync can never take down the thing doing the syncing.
+#
+# First Application in this tenant's own app-of-apps. The directory fills up
+# as apps migrate out of the platform's transitional bridge: each move is a
+# `git mv kubernetes/apps/applications/<app>.yaml` into here, with the
+# Application's own `path:` left pointing at kubernetes/apps/services/<app>,
+# which does not move.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-config
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/core/services/argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

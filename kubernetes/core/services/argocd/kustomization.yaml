@@ -1,0 +1,14 @@
+# No ksops generator here, unlike the pre-split version of this directory.
+# The repository credential used to live next to this file as
+# repo-credentials.sops.yaml, which was circular: ArgoCD had to clone this
+# repo to render the manifest that gave it the credential to clone this repo.
+# It only ever worked because the repo is public.
+#
+# It is now applied imperatively by cli/ (src/steps/07-argocd-repo-credentials.ts)
+# from bootstrap/, before the root app. See
+# bootstrap/argocd/repo-credentials.example.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ingress.yaml

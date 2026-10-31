@@ -9,7 +9,7 @@ import { defaultAgeKeyPath, sopsYamlPath } from "../lib/paths.js";
 const PLACEHOLDER = "age1REPLACE_ME_WITH_YOUR_AGE_PUBLIC_KEY";
 
 /**
- * Doc: one Age key for the whole homelab, reused by both Talos secrets and
+ * Doc: one Age key for this tenant, used by ksops to decrypt the
  * Kubernetes secrets (SOPS). The PRIVATE key never leaves
  * ~/.config/sops/age/keys.txt and is never committed — back it up
  * somewhere outside this repo, losing it makes every encrypted file
