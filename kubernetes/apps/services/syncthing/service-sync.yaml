@@ -7,6 +7,15 @@ apiVersion: v1
 kind: Service
 metadata:
   name: syncthing-sync
+  annotations:
+    # Pinned, not allocated. It held .201 by chance before the vcluster
+    # migration, and peers are configured against that address — an app
+    # whose LoadBalancer IP moves silently stops syncing directly and falls
+    # back to Syncthing's public relay, which is slow and easy not to
+    # notice. Cilium honours this request as long as the address is free,
+    # which is why the old namespace has to be deleted before the new copy
+    # asks for it.
+    io.cilium/lb-ipam-ips: "10.10.100.201"
 spec:
   type: LoadBalancer
   selector:
