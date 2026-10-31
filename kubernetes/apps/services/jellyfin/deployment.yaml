@@ -12,7 +12,12 @@ kind: Deployment
 metadata:
   name: jellyfin
 spec:
-  replicas: 1
+  # TEMPORARILY 0 for the vcluster migration; restored in the next commit.
+  # jellyfin-config holds SQLite databases with live WAL files — the library
+  # index, playback positions, user data. Copied from under a running
+  # Jellyfin they are inconsistent, and a corrupt library database means
+  # rescanning 6.5 TB over NFS.
+  replicas: 0
   strategy:
     type: Recreate # single ReadWriteOnce volumes (config, cache)
   selector:
