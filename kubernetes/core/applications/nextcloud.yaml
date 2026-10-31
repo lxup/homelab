@@ -1,0 +1,36 @@
+# MIGRATED into the homelab vcluster.
+#
+# Your documents never move: /data and /naegativ are NFS mounts from the NAS
+# (/mnt/user/nextcloud and /mnt/user/naegativ), mounted identically from
+# both sides. 6.5 TB that the migration does not touch.
+#
+# What migrates is the 259 MB Postgres (113 MB dumped) and two small PVCs,
+# 44 KB between them — and those two are the delicate part, not because of
+# their size but because of their ownership. The repo history is full of
+# commits getting this right: config and custom_apps owned by UID 33 so both
+# Apache and `occ` can write, Apache's workers running as group `users` so
+# SMB can edit back, localstorage.umask at 0007. All of that is expressed as
+# file ownership on these volumes, so the copy has to preserve uid/gid or
+# Nextcloud comes up read-only in ways that are tedious to diagnose.
+#
+# Verified after copying rather than assumed.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nextcloud
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/nextcloud
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nextcloud
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
