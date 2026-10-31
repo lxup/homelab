@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://github.com/lxup/homelab.git
     targetRevision: main
-    path: kubernetes/core/services/external-dns-internal
+    path: kubernetes/apps/services/external-dns-internal
   destination:
     server: https://kubernetes.default.svc
     namespace: external-dns-internal

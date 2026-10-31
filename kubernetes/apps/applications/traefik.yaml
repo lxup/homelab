@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/lxup/homelab.git
     targetRevision: main
-    path: kubernetes/core/services/traefik
+    path: kubernetes/apps/services/traefik
   destination:
     server: https://kubernetes.default.svc
     namespace: traefik

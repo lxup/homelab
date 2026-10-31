@@ -1,0 +1,46 @@
+service:
+  type: LoadBalancer
+  annotations:
+    # This is the ingress that owns the UDM Pro's 80/443 port-forward, which
+    # targets a literal IP — so the address is pinned, not left to whatever
+    # Cilium hands out on a reschedule.
+    #
+    # The platform (lxup/platform) deliberately claims nothing from the
+    # LoadBalancer pool: it runs no ingress controller and exposes no HTTP.
+    # So .200 is this tenant's from the start, there is no handover to
+    # sequence with anyone, and the port-forward never has to change —
+    # including when this Traefik moves inside the homelab vcluster, since
+    # a vcluster's LoadBalancer Service is synced to the host and allocates
+    # from the same pool.
+    #
+    # Direct path on purpose, not a Cloudflare Tunnel: Jellyfin, Immich and
+    # Nextcloud need real throughput and their uploads exceed Cloudflare's
+    # 100MB proxied-request cap. recomend and pave are API/web traffic and
+    # go through their own tunnels instead.
+    io.cilium/lb-ipam-ips: "10.10.100.200"
+
+ports:
+  web:
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  websecure:
+    http:
+      tls:
+        enabled: true
+
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+# Traefik refuses to route to ExternalName Services by default since
+# v2.4.10 (hardening against a Kubernetes CVE) — needed for
+# nas-passthrough/media.yaml (Plex, still NAS-hosted), which backs its
+# Ingress with an ExternalName Service pointing at the NAS's IP. Without
+# this, Traefik silently has no router for that host at all (generic
+# "404 page not found", easy to mistake for a backend problem).
+providers:
+  kubernetesIngress:
+    allowExternalNameServices: true
