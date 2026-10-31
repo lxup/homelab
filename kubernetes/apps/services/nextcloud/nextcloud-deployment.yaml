@@ -12,11 +12,7 @@ kind: Deployment
 metadata:
   name: nextcloud
 spec:
-  # TEMPORARILY 0 for the vcluster migration; restored in the next commit.
-  # config.php is rewritten by Nextcloud at runtime, and its occ/cron jobs
-  # touch custom_apps — copying either from under a live instance risks a
-  # half-written config. The NFS data volumes are untouched by any of this.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate
   selector:
