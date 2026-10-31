@@ -1,0 +1,50 @@
+# Lives under kubernetes/apps/, not kubernetes/core/, since the platform
+# split (lxup/platform). Gatus watches this tenant's own public endpoints
+# end-to-end, which makes it a tenant workload, not cluster infra — the
+# platform has its own monitoring (Prometheus/Grafana) for the physical
+# layer.
+#
+# The move is also mechanically required during the migration: the platform
+# ArgoCD reaches into this repo through a single transitional bridge that
+# watches kubernetes/apps/applications only. Anything still under
+# kubernetes/core/ here stops reconciling the moment that bridge takes over.
+#
+# MIGRATED into the homelab vcluster — the first application to move.
+#
+# This file lives under kubernetes/core/applications/ now, which is what
+# this tenant's own ArgoCD watches; `path:` below still points at
+# kubernetes/apps/services/gatus, which did not move. That is the whole
+# mechanism of the migration: Application files move between two
+# app-of-apps directories, manifests stay where they are.
+#
+# Moving it out of kubernetes/apps/applications/ means the platform's
+# transitional bridge stops rendering it, so it is pruned from the real
+# cluster. That prune is non-cascading (no Application here carries
+# resources-finalizer.argocd.argoproj.io), so the old copy keeps running
+# until it is deleted by hand — deliberately, because it leaves a rollback
+# open while the new copy comes up.
+#
+# Gatus went first on purpose: 9 MB of Postgres, two SOPS secrets, and
+# LAN-only. The secrets are the point — they are the first *.sops.yaml this
+# tenant's ArgoCD has had to render, so this move is also the test of ksops
+# inside a vcluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gatus
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/gatus
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gatus
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
