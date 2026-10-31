@@ -1,0 +1,37 @@
+# MOVED to this tenant's own ArgoCD — step 4c, the cutover. Last file to
+# leave the platform's transitional bridge.
+#
+# This Traefik requests 10.10.100.200, which the host's still holds: the
+# bridge's prune is non-cascading, so the old one keeps running until its
+# namespace is deleted by hand. So this comes up Pending on the address
+# first, and the deletion is what hands it over.
+#
+# Which is the right order: while the old Traefik is still serving the
+# synced Ingresses, there is no outage. The outage is only the seconds
+# between deleting the host's namespace and Cilium reassigning .200 here.
+#
+# The certificates are already in place: this tenant's cert-manager issued
+# all twelve into the vcluster during step 4a (real Let's Encrypt, valid to
+# 2027-01-29), so nothing has to be re-issued at the moment of the switch.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/traefik
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
