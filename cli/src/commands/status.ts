@@ -104,6 +104,8 @@ const CHECKS = [
   argoAppCheck("gatus", "Gatus"),
   argoAppCheck("lxup", "lxup.net"),
   argoAppCheck("antoinequehec", "antoinequehec.com"),
+  argoAppCheck("vaultwarden", "Vaultwarden"),
+  argoAppCheck("syncthing", "Syncthing"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };
