@@ -1,0 +1,38 @@
+# MIGRATED into the homelab vcluster.
+#
+# Your photos never move: the library is an NFS mount from the NAS
+# (/mnt/user/immich), mounted identically from both sides. 8,825 assets that
+# the migration does not touch.
+#
+# What migrates is the 265 MB Postgres (171 MB dumped, 71 tables). No
+# replicas: 0 needed — immich-server writes to NFS, not to a local volume,
+# and nothing is being copied out from under it.
+#
+# model-cache (10 Gi claimed) is deliberately NOT copied: those are ML model
+# weights that immich-machine-learning re-downloads on first use. Copying
+# them would move several GB to save one download.
+#
+# This is also the first app to need the GPU in anger.
+# immich-machine-learning requests gpu.intel.com/i915, which a throwaway
+# probe proved reaches a vcluster pod — but a probe listing /dev/dri is not
+# the same as OpenVINO actually using it. Worth watching after the move.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: immich
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/immich
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: immich
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
