@@ -1,3 +1,10 @@
+# MIGRATED into the homelab vcluster.
+#
+# No Postgres: Vaultwarden keeps its vault in SQLite inside
+# vaultwarden-data, so the file copy carries the database too — and that is
+# exactly why the deployment is held at 0 on both sides during the copy. A
+# SQLite file copied out from under a running process is a corrupt vault,
+# and this one holds every password.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
