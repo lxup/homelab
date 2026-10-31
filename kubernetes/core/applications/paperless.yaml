@@ -1,0 +1,30 @@
+# MIGRATED into the homelab vcluster.
+#
+# The scanned documents themselves never move: they live on the NAS over
+# NFS (/mnt/user/paperless), mounted identically from both sides. What
+# migrates is the 17 MB Postgres and the 21 MB paperless-data — the search
+# index, the trained classification model, thumbnails and celery's
+# schedule, all of it derived state that would be rebuilt rather than lost.
+#
+# Copied anyway: rebuilding the index on a document archive takes a while,
+# and the trained model would start from nothing.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: paperless
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/paperless
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: paperless
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
