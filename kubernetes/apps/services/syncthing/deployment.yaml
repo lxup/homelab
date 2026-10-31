@@ -9,12 +9,7 @@ kind: Deployment
 metadata:
   name: syncthing
 spec:
-  # TEMPORARILY 0 for the vcluster migration; restored in the next commit.
-  # Syncthing keeps its device identity, keys and folder database in
-  # syncthing-data — copying that from under a running process risks an
-  # inconsistent index, and a changed device ID would make every peer treat
-  # this as a new, untrusted device.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume
   selector:
