@@ -106,6 +106,7 @@ const CHECKS = [
   argoAppCheck("antoinequehec", "antoinequehec.com"),
   argoAppCheck("vaultwarden", "Vaultwarden"),
   argoAppCheck("syncthing", "Syncthing"),
+  argoAppCheck("paperless", "Paperless"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };

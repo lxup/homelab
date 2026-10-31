@@ -13,11 +13,7 @@ kind: Deployment
 metadata:
   name: paperless
 spec:
-  # TEMPORARILY 0 for the vcluster migration; restored in the next commit.
-  # paperless-data holds a SQLite celerybeat schedule with an active WAL and
-  # a Whoosh search index, neither of which survives being copied from
-  # under a running process.
-  replicas: 0
+  replicas: 1
   strategy:
     type: Recreate # single ReadWriteOnce volume (paperless-data)
   selector:
