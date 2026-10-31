@@ -1,0 +1,35 @@
+# Name/path/namespace kept as "external-dns" even though this now deploys
+# the Cloudflare DDNS updater, not the external-dns chart — see
+# kubernetes/core/services/external-dns/ddns-deployment.yaml for why.
+# Lives under kubernetes/apps/, not kubernetes/core/, since the platform
+# split (lxup/platform). "core" used to mean "cluster infra" back when this
+# repo owned the cluster itself; it no longer does — Talos, Cilium, Longhorn,
+# cert-manager and the platform's own Traefik moved to lxup/platform. What
+# is left here is one tenant's workloads, and this is one of them: it
+# manages THIS tenant's public hostnames, nobody else's.
+#
+# The move is also mechanically required during the migration: the platform
+# ArgoCD reaches into this repo through a single transitional bridge that
+# watches kubernetes/apps/applications only. Anything still under
+# kubernetes/core/ here stops reconciling the moment that bridge takes over.
+#
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: external-dns
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lxup/homelab.git
+    targetRevision: main
+    path: kubernetes/apps/services/external-dns
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: external-dns
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -41,14 +41,31 @@ endpoints:
       - type: telegram
         send-on-resolved: true
 
-  - name: ArgoCD
-    url: "https://argocd.nvlab.fr/healthz"
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-    alerts:
-      - type: telegram
-        send-on-resolved: true
+  # DISABLED for the platform-migration window — restore it in the same
+  # commit that brings up this tenant's own ArgoCD ingress.
+  #
+  # Between the platform split and homelab running in its vcluster, nothing
+  # answers on argocd.nvlab.fr: the ArgoCD that used to is now the platform
+  # one, LAN-only at argocd.platform.nvlab.fr (see ../external-dns/ddns-deployment.yaml).
+  # Left enabled, this check goes red and Telegram fires every minute for
+  # days, which is how you learn to ignore Gatus alerts.
+  #
+  # Not simply re-pointed at argocd.platform.nvlab.fr because that record
+  # lives only in UniFi's local DNS, and every other endpoint here is a
+  # public hostname — whether this pod resolves UniFi records is untested,
+  # and a check that silently cannot resolve is worse than no check.
+  #
+  # The URL below is already correct for the end state: this tenant's own
+  # ArgoCD takes argocd.nvlab.fr back, with its GitHub webhook.
+  #
+  # - name: ArgoCD
+  #   url: "https://argocd.nvlab.fr/healthz"
+  #   interval: 1m
+  #   conditions:
+  #     - "[STATUS] == 200"
+  #   alerts:
+  #     - type: telegram
+  #       send-on-resolved: true
 
   - name: Vaultwarden
     url: "https://bitwarden.nvlab.fr/alive"
