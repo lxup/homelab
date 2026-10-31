@@ -96,20 +96,16 @@ spec:
                   name: cloudflare-api-token
                   key: api-token
             - name: DOMAINS
-              # argocd.nvlab.fr is deliberately absent during the platform
-              # migration. The ArgoCD that used to answer here is now the
-              # PLATFORM one (lxup/platform), which is LAN-only at
-              # argocd.platform.nvlab.fr and has no public record at all.
+              # argocd.nvlab.fr is back, and it is this tenant's own ArgoCD
+              # answering on it now — not the platform's, which exposes no
+              # HTTP at all. Having the record refreshed again is what keeps
+              # the GitHub webhook working across a WAN IP change.
               #
-              # The hostname is being held for this tenant's OWN ArgoCD,
-              # which claims it once homelab runs in its vcluster — that is
-              # what keeps its GitHub webhook working, and it is why the
-              # platform took a different hostname instead of this one.
-              # Add it back in the same commit that brings up the tenant's
-              # ArgoCD ingress, not before: between now and then nothing
-              # serves this host, so a public A record for it would just
-              # resolve to a Traefik 404.
-              value: nvlab.fr,bitwarden.nvlab.fr,syncthing.nvlab.fr,antoinequehec.com,strapi.antoinequehec.com,lxup.net
+              # Served, during the migration, by the host's Traefik: the
+              # Ingress is declared inside this tenant's vcluster and copied
+              # to the host by sync.toHost.ingresses. Verified answering
+              # HTTP 200 with a valid certificate before this line went back.
+              value: nvlab.fr,argocd.nvlab.fr,bitwarden.nvlab.fr,syncthing.nvlab.fr,antoinequehec.com,strapi.antoinequehec.com,lxup.net
             - name: PROXIED
               value: "true"
             - name: IP6_PROVIDER
