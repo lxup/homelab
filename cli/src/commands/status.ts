@@ -101,6 +101,7 @@ const CHECKS = [
   checkArgocd,
   checkRootApp,
   argoAppCheck("argocd-config", "ArgoCD Ingress"),
+  argoAppCheck("gatus", "Gatus"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };
