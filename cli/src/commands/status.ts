@@ -108,6 +108,7 @@ const CHECKS = [
   argoAppCheck("syncthing", "Syncthing"),
   argoAppCheck("paperless", "Paperless"),
   argoAppCheck("nextcloud", "Nextcloud"),
+  argoAppCheck("immich", "Immich"),
 ];
 
 const ICON: Record<Health, string> = { ok: pc.green("●"), degraded: pc.yellow("●"), missing: pc.red("●") };
