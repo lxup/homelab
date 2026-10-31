@@ -1,8 +1,44 @@
 # homelab
 
-Pure GitOps homelab running on 3 bare-metal nodes, provisioned with
-[Talos Linux](https://www.talos.dev/) and managed end-to-end by
-[ArgoCD](https://argo-cd.readthedocs.io/) from this repo.
+My own applications — Immich, Jellyfin, Nextcloud, Paperless, Vaultwarden,
+Syncthing, and two websites — running on hardware at home.
+
+> ### ⚠️ Mid-migration. Read this before trusting the rest of the file.
+>
+> This repo used to own both the cluster and the apps. The cluster half has
+> moved to **[lxup/platform](https://github.com/lxup/platform)**: Talos, Cilium,
+> Longhorn, the GPU device plugin, metrics-server, Prometheus, and the
+> definitions of the virtual clusters each environment now runs in. That
+> repo's README is the authority on how the machine works and why the split
+> exists.
+>
+> This repo is becoming one **tenant** among three — alongside
+> [paveproject/infra](https://github.com/paveproject/infra) and
+> [recomendapp/infra](https://github.com/recomendapp/infra) — each with its
+> own ArgoCD inside its own vcluster, its own cert-manager, its own ingress.
+>
+> **Where that leaves this file.** Everything below about the apps, the DNS
+> split-horizon, the public exposure, the secrets model and the per-app
+> gotchas (Nextcloud's NFS ESTALE behaviour, Jellyfin's Quick Sync, Immich's
+> upload cap) is still accurate — it is this tenant's business and always
+> was. Everything about Talos, the node hardware, Cilium, Longhorn and the
+> `cli/` install flow is **stale**: those files are gone from here.
+>
+> **What is still true right now:** these apps run directly on the real
+> cluster, exactly as they always have, synced by the platform's ArgoCD
+> through a clearly-marked transitional bridge. Nothing has moved into a
+> vcluster yet.
+>
+> **What is stale pending phase 1:** `cli/` still describes a Talos install
+> that this repo no longer performs, and `kubernetes/core/root.yaml` points
+> at a path that is now empty. Both are kept on purpose — they become this
+> tenant's own installer and root app, rewritten in phase 1 rather than
+> deleted and rebuilt. `bootstrap/argocd/` likewise: those values install
+> *this tenant's* ArgoCD, which reclaims `argocd.nvlab.fr` and its GitHub
+> webhook.
+>
+> This banner comes out when phase 1 lands and the file gets rewritten for
+> what it actually is.
 
 ## Hardware
 
