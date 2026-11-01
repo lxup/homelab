@@ -94,9 +94,8 @@ function argoAppCheck(key: string, label: string) {
 // its own `status` command, against its own kubeconfig. Asking about them
 // from in here would report on a cluster this repo does not manage.
 //
-// This list grows as apps migrate into the vcluster: add an
-// argoAppCheck(...) line per Application as it moves out of the platform's
-// transitional bridge and into kubernetes/core/applications/ here.
+// Add an argoAppCheck(...) line here for every Application added under
+// kubernetes/core/applications/.
 const CHECKS = [
   checkArgocd,
   checkRootApp,

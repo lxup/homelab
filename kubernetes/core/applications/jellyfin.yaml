@@ -1,21 +1,3 @@
-# MIGRATED into the homelab vcluster. The last of the nine, and the
-# largest copy: 4.7 GB of jellyfin-config.
-#
-# Your media never moves: /media is an NFS mount from the NAS
-# (/mnt/user/media), mounted identically from both sides.
-#
-# jellyfin-cache (296 MB used of 20 Gi claimed) is deliberately NOT copied —
-# transcode cache, rebuilt on demand.
-#
-# jellyfin-config is the one that matters and the reason the deployment is
-# held at 0 for the copy: it holds a set of SQLite databases (the library
-# index, playback positions, user data) with live WAL files. Copied from
-# under a running Jellyfin they would be inconsistent, and a corrupt library
-# database means a rescan of 6.5 TB over NFS.
-#
-# This is also the second GPU app: Quick Sync transcoding through
-# gpu.intel.com/i915, which immich-machine-learning has already proven works
-# from inside a vcluster.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

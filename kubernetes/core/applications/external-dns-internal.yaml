@@ -1,19 +1,6 @@
-# Second external-dns instance, same Ingresses as the Cloudflare one
-# (kubernetes/core/services/external-dns/) but writing into UniFi's own
-# local DNS instead — so LAN/VPN clients resolve straight to the private
-# LB IP without ever touching Cloudflare, and internal-only hosts
-# (Grafana, Hubble) don't need a public DNS record at all.
-# MOVED to this tenant's own ArgoCD — step 4b of the ingress handover.
-#
-# txtOwnerId stays `homelab-internal`, deliberately NOT a new one. The
-# existing UniFi records are owned by that id and external-dns only ever
-# touches what it owns — a fresh owner id would leave every record orphaned,
-# updatable by nobody. That is the opposite of the rule between two
-# different tenants, where distinct ids are what keeps them from fighting.
-#
-# The two instances agree on every value while they overlap: same hostnames,
-# same .200 target (the in-vcluster Ingress status is synced back from the
-# host). The host's instance goes away when its namespace is deleted in 4c.
+# Second external-dns instance: same Ingresses as the Cloudflare one, written
+# into UniFi's local DNS instead, so LAN/VPN clients resolve straight to the
+# private LB IP and internal-only hosts need no public record.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

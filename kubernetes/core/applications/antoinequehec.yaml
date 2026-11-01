@@ -1,14 +1,3 @@
-# MIGRATED into the homelab vcluster.
-#
-# First app to move a FILE volume rather than only a database: strapi-data
-# carries ~176 MB, nearly all of it uploads. Picked for that ahead of
-# vaultwarden, which is smaller but is the password vault — proving the copy
-# path on a CMS is the cheaper mistake.
-#
-# strapi-data is also the awkward one: it is mounted at three paths via
-# subPath (/opt/app/config, /opt/app/src, /opt/app/public/uploads), so the
-# copy goes through a helper pod mounting the PVC bare. Only that sees the
-# whole volume.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

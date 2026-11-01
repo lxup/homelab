@@ -29,35 +29,29 @@ Syncthing, and two websites — running on hardware at home.
 > gotchas is still accurate. The NAS mounts are identical — the migration
 > never touched a byte on `10.10.10.101`. Sections about the node hardware,
 > Cilium and Longhorn describe the platform's business now, not this repo's.
+## Where it runs
 
-## Hardware
-
-| | |
-|---|---|
-| Compute | 3x HP EliteDesk (i5, Intel iGPU / Quick Sync), each a combined control-plane + worker node |
-| OS | [Talos Linux](https://www.talos.dev/) — immutable, API-managed, no SSH |
-| Storage | NVMe/SSD on each node (local, distributed) + an existing Unraid NAS over NFS |
+In the `homelab` vcluster on [lxup/platform](https://github.com/lxup/platform)'s
+Talos cluster — 3 HP EliteDesks with Intel Quick Sync iGPUs, Longhorn for
+block storage, and an Unraid NAS over NFS for the bulk data. That repo's
+README is the authority on the hardware, Talos, Cilium, Longhorn and the GPU
+device plugin; none of it is this repo's business any more.
 
 ## Stack
 
 | Concern | Tool |
 |---|---|
-| OS / node config | Talos Linux, declared in [`talos/`](talos/) via [talhelper](https://budimanjojo.github.io/talhelper/) |
-| CNI / LB / kube-proxy replacement | [Cilium](https://cilium.io/) (installed by Talos at bootstrap, see [`talos/manifests`](talos/manifests/)) |
-| Ingress | Traefik |
-| TLS | cert-manager |
-| Block storage | Longhorn (local NVMe, replicated across all 3 nodes) |
-| GPU passthrough | Intel Device Plugin (`gpu.intel.com/i915`), for Plex/Jellyfin Quick Sync transcoding |
+| Ingress | Traefik, holding `10.10.100.200` behind the UDM Pro's 80/443 forward |
+| TLS | cert-manager, DNS-01 through Cloudflare |
 | DNS | Split-horizon: Cloudflare DDNS updater (public hostnames → home WAN IP) + external-dns → UniFi local DNS (everything, LAN/VPN-only) |
-| Public exposure | UDM Pro port-forwards 80/443 straight to Traefik's LB IP — no Cloudflare Tunnel |
-| Dashboard / metrics | Prometheus + Grafana (`kube-prometheus-stack`), node-exporter + kube-state-metrics, `metrics-server` for `kubectl top` |
-| Network flow visibility | Hubble UI (ships with Cilium) |
-| Continuous delivery | ArgoCD, app-of-apps, watching this repo |
+| Public exposure | Direct through the UDM Pro's port-forward, no tunnel — Jellyfin, Immich and Nextcloud need real throughput and exceed Cloudflare's 100 MB proxied cap |
+| Block storage | Longhorn (the platform's), `storageClassName: longhorn` |
+| Bulk data | NFS from the NAS, mounted straight in the pod specs |
+| GPU | `gpu.intel.com/i915` requests, resolved host-side by the platform's device plugin |
+| Uptime monitoring | Gatus → Telegram (infra alerts come from the platform's Alertmanager, same bot) |
+| Continuous delivery | its own ArgoCD, inside the vcluster, app-of-apps on this repo |
 | Secrets | [SOPS](https://github.com/getsops/sops) + [Age](https://github.com/FiloSottile/age) — encrypted in git, no external secret store |
 | App builds | GitHub Actions → GHCR, ArgoCD Image Updater bumps tags |
-
-No cloud secret manager, no Coolify, nothing imperative outside this repo
-and the one-time install.
 
 ## Network
 
@@ -77,7 +71,7 @@ controller before first boot (see the comment at the top of
 `talos/talconfig.yaml` for why). The Unraid NAS stays on the main LAN, so
 NFS traffic crosses VLANs — add a UDM Pro firewall rule allowing the
 cluster VLAN to reach it. Same requirement for
-`kubernetes/core/services/external-dns-internal/` → the UDM Pro's own
+`kubernetes/apps/services/external-dns-internal/` → the UDM Pro's own
 management API (`10.10.10.1:443`) needs to be reachable from the cluster
 VLAN too.
 
@@ -122,7 +116,7 @@ Ingresses and points records at the LB IP" pattern (that LB IP is a
 private, unroutable address from the internet's point of view). So the two
 halves of the split-horizon use genuinely different mechanisms:
 
-- **Public** — [`external-dns/`](kubernetes/core/services/external-dns/)
+- **Public** — [`external-dns/`](kubernetes/apps/services/external-dns/)
   (repurposed; still the name/namespace/secret, see the comment in
   `ddns-deployment.yaml`) runs **two** Cloudflare DDNS updater instances
   ([favonia/cloudflare-ddns](https://github.com/favonia/cloudflare-ddns)).
@@ -140,7 +134,7 @@ halves of the split-horizon use genuinely different mechanisms:
     Cloudflare's ToS on free/Pro plans — not worth the trade-off here.
   Nothing is public unless its hostname is in one of these two `DOMAINS`
   lists — adding one is a one-line git change.
-- **Internal** — [`external-dns-internal/`](kubernetes/core/services/external-dns-internal/)
+- **Internal** — [`external-dns-internal/`](kubernetes/apps/services/external-dns-internal/)
   → UniFi's own local DNS, via the
   [UniFi webhook provider](https://github.com/home-operations/external-dns-unifi-webhook).
   No filter — every Ingress gets a record here (including the public
@@ -149,7 +143,7 @@ halves of the split-horizon use genuinely different mechanisms:
 
 Needs a UniFi API key (Settings → Control Plane → Integrations → Create
 API Key — Super Admin only to create it, can downgrade after) in
-[`external-dns-internal/unifi-api-key.sops.yaml`](kubernetes/core/services/external-dns-internal/unifi-api-key.sops.yaml).
+[`external-dns-internal/unifi-api-key.sops.yaml`](kubernetes/apps/services/external-dns-internal/unifi-api-key.sops.yaml).
 
 ### Services still hosted on the NAS
 
@@ -246,29 +240,30 @@ Device pairing (adding the MacBook/gaming PC as remote devices, creating
 the shared folder) is a one-time manual step via the GUI — device IDs
 don't exist until each machine's own Syncthing is installed, nothing to
 template in git for that part.
-
 ## Repo layout
 
 ```
-talos/              Talos cluster definition (talhelper) + the Cilium
-                     manifest installed inline at bootstrap
 bootstrap/
-  argocd/values.yaml  One-shot helm values for ArgoCD's initial install
+  argocd/values.yaml   One-shot helm values for this tenant's ArgoCD install
 kubernetes/
-  core/              Cluster-wide infra, managed by ArgoCD from day one
-    root.yaml          App-of-apps entrypoint
-    applications/      One Application manifest per core service
-    services/          The actual Helm values / manifests each one deploys
-  apps/              Business apps (Vaultwarden, Nextcloud, NAS passthrough)
-    applications/      One Application manifest per app
-    services/          The actual manifests each one deploys
-cli/                 Install AND manage the cluster — one CLI, see below
+  core/                This tenant's own infra, synced by its ArgoCD
+    root.yaml            App-of-apps entrypoint
+    applications/        One Application per service — infra and apps alike
+    services/argocd/     Its ArgoCD Ingress (argocd.nvlab.fr + webhook)
+  apps/
+    services/            The manifests every Application points at
+cli/                   Installs ArgoCD into the vcluster — see below
 ```
 
-## The CLI
+Note the asymmetry: `core/applications/` holds every Application, including
+the ones whose manifests live under `apps/services/`. The split is
+historical — Application files migrated out of `apps/applications/` one at a
+time while the manifests stayed put — and consolidating it is a pure rename
+nobody has needed yet.
 
-One CLI, two sections today (see [`cli/README.md`](cli/README.md) for the
-full breakdown):
+There is no `talos/`: the cluster belongs to
+[lxup/platform](https://github.com/lxup/platform).
+## The CLI
 
 ```bash
 cd cli
@@ -276,32 +271,33 @@ bun install
 bun start           # interactive menu
 ```
 
-- **Install** — first-time bring-up: generate/encrypt secrets, wipe and
-  install Talos on all 3 nodes, bootstrap Kubernetes, install ArgoCD, hand
-  off `kubernetes/core/` to GitOps. Live step-by-step progress.
-- **Status** — checks every core component (Talos nodes, Cilium, ArgoCD,
-  and every ArgoCD-managed Application) and offers to fix what's missing —
-  e.g. reinstalls ArgoCD if it's gone, re-applies the root app-of-apps if
-  it's missing.
+- **Install** — installs ArgoCD into this tenant's vcluster and hands it
+  `kubernetes/core/`. It does **not** create a cluster: `./kubeconfig` must
+  already point at the `homelab` vcluster. Step 03 refuses to run against
+  the host cluster — the tell is a `longhorn-system` namespace, which a
+  vcluster never sees.
+- **Status** — checks this tenant's ArgoCD, its root app and its
+  Applications, and offers to fix what is missing. Nodes, Cilium, Longhorn
+  and Prometheus belong to the platform; check those with its own `status`.
 
-More sections (upgrades, node maintenance, …) land here over time.
+Full step-by-step breakdown in [`cli/README.md`](cli/README.md).
 
 ### Before your first run
 
-1. Set up the UDM Pro VLAN + DHCP reservations as described in
-   [Network](#network) above.
-2. Check [`talos/talconfig.yaml`](talos/talconfig.yaml) matches your real
-   node MACs/hostnames (IPs already match the Network section).
-3. Fill in a real Cloudflare API token:
-   [`kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml`](kubernetes/core/services/external-dns/cloudflare-api-token.sops.yaml)
-   (then `sops -e -i` it) and your domain(s) in the `DOMAINS` env var of
-   [`kubernetes/core/services/external-dns/ddns-deployment.yaml`](kubernetes/core/services/external-dns/ddns-deployment.yaml).
-4. The repo URL baked into every `Application`/`root.yaml` is
-   `https://github.com/lxup/homelab.git` on `main` — update it if you fork
-   or rename.
-
-The installer generates your Age key and Talos secrets on first run; there's
-nothing to prepare for SOPS beyond having `sops`/`age` installed.
+1. Get the kubeconfig. In [lxup/platform](https://github.com/lxup/platform):
+   ```bash
+   bun run src/index.ts tenant        # writes tenants/homelab.kubeconfig
+   cp tenants/homelab.kubeconfig ../homelab/kubeconfig
+   ```
+2. Fill in a real Cloudflare API token in
+   [`kubernetes/apps/services/external-dns/cloudflare-api-token.sops.yaml`](kubernetes/apps/services/external-dns/cloudflare-api-token.sops.yaml)
+   (then `sops -e -i` it) and your domains in the `DOMAINS` env vars of
+   [`ddns-deployment.yaml`](kubernetes/apps/services/external-dns/ddns-deployment.yaml).
+3. The repo URL baked into every `Application` and into `root.yaml` is
+   `https://github.com/lxup/homelab.git` on `main` — change it if you fork.
+4. Optionally create `bootstrap/argocd/repo-credentials.sops.yaml` from the
+   `.example.yaml` beside it. Not needed while the repo is public; having it
+   means flipping it private is a visibility toggle and nothing else.
 
 ## Secrets model
 
@@ -376,41 +372,35 @@ long to land. The webhook makes it instant. Two halves:
 
 This is why `argocd.nvlab.fr` is publicly reachable at all — see the comment
 at the top of [`kubernetes/core/services/argocd/ingress.yaml`](kubernetes/core/services/argocd/ingress.yaml).
-
-## Dashboards
+## UIs
 
 | What | URL | Login |
 |---|---|---|
 | ArgoCD | `argocd.nvlab.fr` | `admin` / `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' \| base64 -d` |
-| Grafana | `grafana.nvlab.fr` | credentials in `kubernetes/core/services/monitoring/grafana-admin.sops.yaml` (sops-encrypted) |
-| Hubble UI | `hubble.nvlab.fr` | none — read-only network flow map |
-| Longhorn UI | not exposed via Ingress yet — `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8080:80` | none |
 | Gatus | `status.nvlab.fr` (LAN-only, not public) | none — read-only status page |
 
-Grafana ships with the default kube-prometheus-stack dashboards (node
-resource usage, pod resource usage, cluster capacity) plus two more added
-as code in [`kubernetes/core/services/monitoring/dashboards/`](kubernetes/core/services/monitoring/dashboards/) —
-nothing to configure after first login, no manual import, survives a full
-reinstall:
+Everything else moved to the platform with the cluster, and lives behind
+`kubectl port-forward` against **its** kubeconfig, not this one:
 
-- **Node Exporter Full** (community dashboard 1860) — the detailed
-  per-node view: CPU/RAM/disk I/O/network/temperature.
-- **Homelab Apps** (custom) — one row per app (emoji as the "icon",
-  CPU/memory/network/restarts per pod), plus a cluster-summary row at the
-  top. Add a new app by adding an entry to the `APPS` list in
-  [`generate-homelab-apps.py`](kubernetes/core/services/monitoring/dashboards/generate-homelab-apps.py)
-  and re-running it (regenerates `homelab-apps.json` in place).
+| What | How |
+|---|---|
+| Prometheus | `kubectl -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090` |
+| Hubble UI | `kubectl -n kube-system port-forward svc/hubble-ui 8080:80` |
+| Longhorn UI | `kubectl -n longhorn-system port-forward svc/longhorn-frontend 8081:80` |
 
-Both are plain ConfigMaps labeled `grafana_dashboard: "1"` — the chart's
-Grafana sidecar auto-discovers and loads them, same mechanism the
-chart's own default dashboards use.
+There is no Grafana any more. It was removed along with the dashboards that
+fed it: the stack cost 1.4 GB to serve pages nobody opened while
+Alertmanager discarded every alert it produced. The platform now routes
+alerts Gatus cannot see — a node down, a Longhorn volume degraded, a crash
+loop, a disk filling — into the same Telegram bot this repo's Gatus uses, so
+both arrive in one conversation. See lxup/platform's README.
 
-`kubectl top nodes` / `kubectl top pods` work immediately too
-(metrics-server).
+`kubectl top nodes` / `kubectl top pods` work against either kubeconfig
+(metrics-server runs on the platform and a vcluster sees it).
 
 ### Gatus (synthetic / blackbox monitoring)
 
-[`kubernetes/core/services/gatus/`](kubernetes/core/services/gatus/) —
+[`kubernetes/apps/services/gatus/`](kubernetes/apps/services/gatus/) —
 deliberately separate from Grafana/Prometheus: those watch pod-level
 health (is the container Running/Ready), which misses failures *outside*
 the pod entirely — a stale NFS mount or a bad DNS record can leave a pod
@@ -419,7 +409,7 @@ Gatus instead checks the real public hostname end-to-end (DNS → internet →
 Traefik → app), the same path an actual visitor takes.
 
 Fully GitOps, unlike most uptime-monitoring tools (Uptime Kuma included) —
-[`config.yaml`](kubernetes/core/services/gatus/config.yaml) declares every
+[`config.yaml`](kubernetes/apps/services/gatus/config.yaml) declares every
 monitored endpoint *and* the Telegram alerting config as plain YAML, no
 UI setup at all. Add a service by adding an entry to `endpoints:` and
 committing. Its own Postgres (R2-backed) persists history across
@@ -433,7 +423,7 @@ that's an action on Telegram's side, not Gatus's:
    `https://api.telegram.org/bot<TOKEN>/getUpdates` and read your
    `chat.id` from the JSON.
 3. Put both in
-   [`telegram-secret.sops.yaml`](kubernetes/core/services/gatus/telegram-secret.sops.yaml)
+   [`telegram-secret.sops.yaml`](kubernetes/apps/services/gatus/telegram-secret.sops.yaml)
    (`sops -e -i` it) — `config.yaml` references them via
    `${TELEGRAM_BOT_TOKEN}` / `${TELEGRAM_CHAT_ID}`.
 

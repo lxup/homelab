@@ -1,24 +1,6 @@
-# Name/path/namespace kept as "external-dns" even though this now deploys
-# the Cloudflare DDNS updater, not the external-dns chart — see
-# kubernetes/core/services/external-dns/ddns-deployment.yaml for why.
-# Lives under kubernetes/apps/, not kubernetes/core/, since the platform
-# split (lxup/platform). "core" used to mean "cluster infra" back when this
-# repo owned the cluster itself; it no longer does — Talos, Cilium, Longhorn,
-# cert-manager and the platform's own Traefik moved to lxup/platform. What
-# is left here is one tenant's workloads, and this is one of them: it
-# manages THIS tenant's public hostnames, nobody else's.
-#
-# The move is also mechanically required during the migration: the platform
-# ArgoCD reaches into this repo through a single transitional bridge that
-# watches kubernetes/apps/applications only. Anything still under
-# kubernetes/core/ here stops reconciling the moment that bridge takes over.
-#
-# MOVED to this tenant's own ArgoCD — step 4b of the ingress handover.
-#
-# This is the public Cloudflare DDNS updater, keyed on the hostnames in its
-# DOMAINS env var rather than on Ingress objects. So two instances running
-# during the overlap both set the same records to the same WAN IP, which is
-# a no-op. Safe to move ahead of the cutover.
+# Name/path/namespace kept as "external-dns" even though this deploys the
+# Cloudflare DDNS updater, not the external-dns chart — see
+# kubernetes/apps/services/external-dns/ddns-deployment.yaml for why.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

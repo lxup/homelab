@@ -1,15 +1,3 @@
-# MIGRATED into the homelab vcluster. The trivial one: an ExternalName
-# Service pointing at the NAS's Plex (10.10.10.101:32400) and an Ingress for
-# media.nvlab.fr. No pods, no volumes, no data.
-#
-# Overlap is free here for the same reason it was for lxup: both copies
-# proxy to the same Plex, so whichever Ingress Traefik picks serves
-# identically.
-#
-# One dependency to keep in mind: Traefik refuses ExternalName backends
-# unless `allowExternalNameServices` is set, which this tenant's own Traefik
-# values already carry — so it keeps working after the ingress handover in
-# the final step, not just while the host's Traefik is serving it.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

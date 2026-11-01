@@ -1,16 +1,3 @@
-# MOVED to this tenant's own ArgoCD — step 4a of the ingress handover.
-#
-# Additive and deliberately ahead of the Traefik cutover. This installs
-# cert-manager INSIDE the vcluster, where it sees the tenant's Ingress
-# objects and starts issuing their certificates into the vcluster. By the
-# time .200 changes hands in 4c, the certificates are already in hand —
-# otherwise the outage would run until eleven DNS-01 challenges had
-# completed through Cloudflare, a minute or two each.
-#
-# The host's cert-manager keeps serving the synced copies meanwhile. No
-# conflict: different clusters, and CRDs are per-API-server. Two
-# cert-managers briefly solving DNS-01 for the same names is fine — each
-# ACME order is independent and both clean up their _acme-challenge records.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

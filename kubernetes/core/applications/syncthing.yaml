@@ -1,11 +1,3 @@
-# MIGRATED into the homelab vcluster.
-#
-# The only app so far with a LoadBalancer of its own, which needed care:
-# syncthing-sync had 10.10.100.201 by allocation, not by pin, so the copy in
-# the vcluster would have been handed a different address and every peer
-# configured against .201 would have silently stopped syncing directly. The
-# address is pinned in the manifest now, and the old namespace is deleted
-# before the new copy comes up so the pool has it free to give back.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
