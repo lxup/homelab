@@ -17,8 +17,7 @@
     "@clack/prompts": "^1.8.1",
     "execa": "^9.5.2",
     "listr2": "^8.2.5",
-    "picocolors": "^1.1.1",
-    "yaml": "^2.6.1"
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/bun": "^1.1.14",

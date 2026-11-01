@@ -2,9 +2,7 @@ import * as p from "@clack/prompts";
 import pc from "picocolors";
 import {
   getArgoApplication,
-  getDaemonSetStatus,
   getDeploymentReady,
-  getNodesStatus,
   helmReleaseExists,
   refreshArgoApplication,
 } from "../lib/kubectl.js";
@@ -19,20 +17,6 @@ interface CheckResult {
   health: Health;
   detail: string;
   fix?: { label: string; run: () => Promise<void> };
-}
-
-async function checkNodes(): Promise<CheckResult> {
-  const nodes = await getNodesStatus();
-  if (!nodes) return { key: "nodes", label: "Talos nodes", health: "missing", detail: "no kubeconfig / cluster unreachable" };
-  const health: Health = nodes.ready === nodes.total ? "ok" : "degraded";
-  return { key: "nodes", label: "Talos nodes", health, detail: `${nodes.ready}/${nodes.total} Ready` };
-}
-
-async function checkCilium(): Promise<CheckResult> {
-  const ds = await getDaemonSetStatus("kube-system", "cilium");
-  if (!ds) return { key: "cilium", label: "Cilium (CNI)", health: "missing", detail: "daemonset not found" };
-  const health: Health = ds.ready === ds.desired && ds.desired > 0 ? "ok" : "degraded";
-  return { key: "cilium", label: "Cilium (CNI)", health, detail: `${ds.ready}/${ds.desired} pods ready` };
 }
 
 async function checkArgocd(): Promise<CheckResult> {
