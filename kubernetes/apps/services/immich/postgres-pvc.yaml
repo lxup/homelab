@@ -4,7 +4,7 @@ metadata:
   name: postgres-data
   labels:
     # Opts into the daily R2 backup RecurringJob — see
-    # kubernetes/core/services/longhorn/recurring-job.yaml.
+    # lxup/platform, kubernetes/platform/services/longhorn/recurring-job.yaml.
     recurring-job.longhorn.io/source: enabled
     recurring-job-group.longhorn.io/r2-backup: enabled
 spec:

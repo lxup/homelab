@@ -4,7 +4,7 @@ metadata:
   name: vaultwarden-data
   labels:
     # Opts this PVC into the "r2-backup" RecurringJob (daily, 7 retained) —
-    # see kubernetes/core/services/longhorn/recurring-job.yaml.
+    # see lxup/platform, kubernetes/platform/services/longhorn/recurring-job.yaml.
     recurring-job.longhorn.io/source: enabled
     recurring-job-group.longhorn.io/r2-backup: enabled
 spec:

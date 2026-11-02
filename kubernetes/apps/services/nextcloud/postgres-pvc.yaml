@@ -4,7 +4,7 @@ metadata:
   name: postgres-data
   labels:
     # Opts this PVC into the "r2-backup" RecurringJob (daily, 7 retained) —
-    # see kubernetes/core/services/longhorn/recurring-job.yaml. A
+    # see lxup/platform, kubernetes/platform/services/longhorn/recurring-job.yaml. A
     # volume-level snapshot of a live Postgres data dir is only
     # crash-consistent, not a clean shutdown — that's fine, Postgres
     # replays its WAL on next start exactly like recovering from a power
