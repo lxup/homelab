@@ -55,6 +55,23 @@ spec:
         - name: paperless
           image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
           env:
+            # The group paperless's processes actually run with, and the
+            # whole point of this block. fsGroup alone does not survive: s6
+            # is PID 1 as root and drops to the paperless user with a setuid
+            # helper whose initgroups() rebuilds the group list from
+            # /etc/group, where `paperless:x:1000:` has no members — so the
+            # gid 100 the pod spec injected is dropped before the app ever
+            # runs. Measured on the live pod: celery and granian came up with
+            # `groups=1000` and both writes still failed.
+            #
+            # USERMAP_GID changes the paperless group's gid itself
+            # (/etc/s6-overlay/s6-rc.d/init-modify-user/run groupmods it), so
+            # 100 becomes the primary gid and initgroups() keeps it. Requires
+            # the container to start as root, which it does — that same
+            # script skips the remap entirely for a non-root start and only
+            # logs a warning, so do not add runAsUser here.
+            - name: USERMAP_GID
+              value: "100"
             - name: PAPERLESS_URL
               value: https://paperless.nvlab.fr
             - name: PAPERLESS_TIME_ZONE
