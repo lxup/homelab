@@ -25,6 +25,32 @@ spec:
         app: paperless
     spec:
       enableServiceLinks: false
+      # The app runs as uid 1000 (the image's `paperless` user, per
+      # /etc/passwd) while everything on the NAS share is owned 99:100 —
+      # Unraid's nobody:users convention. The share root is 0777 so creating
+      # a file there worked, which made a naive `touch` test pass, but
+      # `media.lock` was 0644 and `documents/` 0755: paperless could neither
+      # take its media lock nor write a document, and every consume failed
+      # with "[Errno 13] Permission denied: media.lock".
+      #
+      # fsGroup puts gid 100 in the process's supplementary groups, which is
+      # what the NFS server checks under sec=sys. Verified on a throwaway pod
+      # before this went in: runAsUser 1000 + fsGroup 100 yields
+      # `groups=1000 100`, and the share was then chmod'd g+w with g+s on
+      # directories so the group bits actually grant write and new files
+      # inherit gid 100 (keeping them writable over SMB).
+      #
+      # NOT a chown to 1000:100 on the NAS instead: that would show an
+      # unknown owner in the Unraid UI and break step with every other share.
+      # NOT USERMAP_UID=99 either — it would fix the NFS side and lose the
+      # Longhorn data volume, which is 1000:1000.
+      #
+      # Side effect to know about: fsGroup is ignored for the nfs volume but
+      # does apply to the Longhorn one, so `data` gets a recursive chgrp to
+      # 100 on every pod start. Harmless (uid 1000 still owns it) and only
+      # costs a few seconds. Same pattern as the nextcloud deployment.
+      securityContext:
+        fsGroup: 100
       containers:
         - name: paperless
           image: ghcr.io/paperless-ngx/paperless-ngx:3.2.1
