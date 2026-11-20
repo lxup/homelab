@@ -76,6 +76,28 @@ spec:
               value: https://paperless.nvlab.fr
             - name: PAPERLESS_TIME_ZONE
               value: Europe/Paris
+            # ocrmypdf's parallel job count, and the reason this pod was
+            # OOMKilled on 2026-11-20 at 08:10 UTC. Paperless derives the
+            # default from os.cpu_count(), which inside a container reports
+            # the NODE's cores — 12 on an EliteDesk — not the 2 the cgroup
+            # actually allows (cpu.max = 200000/100000). It therefore ran OCR
+            # with twelve parallel jobs, each holding its page images, and the
+            # burst reached the 2Gi limit.
+            #
+            # Measured rather than guessed: the container's baseline is flat
+            # at ~1Gi over seven days with no drift, so there is no leak. The
+            # sampled working_set metric never showed the spike because it
+            # happens between scrapes; container_memory_max_usage_bytes, a
+            # high-water mark, recorded exactly 2048Mi twice in that week.
+            #
+            # 2 to match cpu.max. This costs no throughput — twelve threads
+            # could never run on two cores, they only allocated as if they
+            # could. The memory limit is deliberately left at 2Gi: raising it
+            # would have moved the ceiling without touching the cause, and
+            # with the burst bounded there is now ample headroom above the
+            # 1Gi baseline.
+            - name: PAPERLESS_THREADS_PER_WORKER
+              value: "2"
             - name: PAPERLESS_OCR_LANGUAGE
               value: fra
             - name: PAPERLESS_REDIS
